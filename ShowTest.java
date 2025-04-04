@@ -165,6 +165,24 @@ class ShowTest {
         CinemaShow updatedShow = showRepository.findById(testShow.getId()).orElseThrow();
         assertEquals(testShow.getStartTime(), updatedShow.getStartTime());
     }
+// Update show with invalid ID
+    @Test
+    void testUpdateShow_InvalidID() throws Exception {
+        ShowRequest updateRequest = new ShowRequest();
+
+        Field cinemaID = updateRequest.getClass().getDeclaredField("cinemaID");
+        cinemaID.setAccessible(true);
+        cinemaID.set(updateRequest, 1L);
+
+        Field movieID = updateRequest.getClass().getDeclaredField("movieID");
+        movieID.setAccessible(true);
+        movieID.set(updateRequest, 1L);
+
+        Exception exception = assertThrows(MyNotFoundException.class, 
+        () -> cinemaShowService.updateShow("9999", updateRequest));
+
+        assertEquals("Show is not found", exception.getMessage());
+    }
 //Delete show by ID
     @Test
     void testDeleteShow() {
