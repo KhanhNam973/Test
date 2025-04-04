@@ -15,7 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-
+//OK
 @SpringBootTest
 @Transactional 
 class GenreServiceImplTest {
@@ -39,12 +39,10 @@ class GenreServiceImplTest {
 //Save a genre that already exists
     @Test
     void testSave_DuplicateGenre() {
-        Genre genre = new Genre();
-        genre.setGenre("Comedy");
-        genreService.saveGenre(genre);
         Genre duplicateGenre = new Genre();
         duplicateGenre.setGenre("Comedy");
-        assertThrows(MyBadRequestException.class, () -> genreService.saveGenre(duplicateGenre));
+        Exception e=assertThrows(MyBadRequestException.class, () -> genreService.saveGenre(duplicateGenre));
+        assertEquals("This genre is existed", e.getMessage());
     }
 
 //Get all genres
@@ -61,7 +59,7 @@ class GenreServiceImplTest {
     @Test
     void testGetGenre() {
         Genre foundGenre = genreService.getGenre(1L);
-        assertEquals("Hi", foundGenre.getGenre());
+        assertEquals("science fiction", foundGenre.getGenre());
     }
 
 //Get a genre by ID that does not exist
@@ -74,12 +72,14 @@ void testGetGenre_NoExist() {
     @Test
     void testUpdateGenre() {
         Genre genre = new Genre();
-        genre.setGenre("Light fantasy");
+        genre.setGenre("Light novel");
         Genre savedGenre = genreService.saveGenre(genre);
-        savedGenre.setGenre("Dark Fantasy");
-        Genre updatedGenre = genreService.updateGenre(savedGenre);
-        assertEquals("Dark Fantasy", updatedGenre.getGenre());
+
+        savedGenre.setGenre("Hello World");
+        Genre updatedG = genreService.updateGenre(savedGenre);
+        assertEquals("Hello World", updatedG.getGenre());
     }
+    //Update a genre but in the final code use save method
 
 //Update a genre that does not exist
     @Test
@@ -136,8 +136,6 @@ void testGetGenre_NoExist() {
 
         Genre genre2 = new Genre();
         genre2.setGenre("Romantic");
-
-        genreService.saveGenre(genre1); // Save one genre manually
 
         List<Genre> genres = Arrays.asList(genre1, genre2);
         MyApiResponse response = genreService.saveListGenres(genres);
