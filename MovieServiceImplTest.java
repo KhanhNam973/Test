@@ -1,10 +1,12 @@
 package cinema.ticket.booking;
 
+import cinema.ticket.booking.exception.MyNotFoundException;
 import cinema.ticket.booking.model.Genre;
 import cinema.ticket.booking.model.Movie;
 import cinema.ticket.booking.repository.GenreReposity;
 import cinema.ticket.booking.repository.MovieRepo;
 import cinema.ticket.booking.response.MovieInfoResponse;
+import cinema.ticket.booking.response.MyApiResponse;
 import cinema.ticket.booking.service.impl.MovieServiceImpl;
 import jakarta.transaction.Transactional;
 
@@ -72,7 +74,7 @@ public class MovieServiceImplTest {
         movie1 = movieRepo.save(movie1); 
         movie2 = movieRepo.save(movie2);
     }
-
+//Get Movies
     @Test
     void testGetMovies() {
         List<MovieInfoResponse> movies = movieService.getMovies(0, 10);
@@ -80,6 +82,7 @@ public class MovieServiceImplTest {
         assertEquals(2, movies.size());
     }
 
+//Save Movie
     @Test
     void testSaveMovie() {
         Movie movie = new Movie();
@@ -95,18 +98,75 @@ public class MovieServiceImplTest {
         assertNotNull(savedMovie.getId());
         assertEquals("Inception", savedMovie.getTitle());
     }
-
+//Get Movies By ID
     @Test
     void testGetMovieById() {
         MovieInfoResponse movie = movieService.getMovie(movie1.getId());
         assertNotNull(movie);
         assertEquals("Avengers", movie.getTitle());
     }
+//Get Movies By Not Existed ID
+    @Test
+    void testGetMovieById_NonExisted() {
+        MyNotFoundException ex = assertThrows(MyNotFoundException.class, () -> movieService.getMovie(999L));
+        assertEquals("Movie not found", ex.getMessage());
 
+    }
+//Delete Movie with existed ID
     @Test
     void testDeleteMovie() {
         movieService.deleteMovie(movie1.getId());
         assertFalse(movieRepo.existsById(movie1.getId())); 
+    }
+//Delete Movie with not existed ID
+    @Test
+    void testDeleteMovie_NonExisted() {
+        MyNotFoundException ex = assertThrows(MyNotFoundException.class, () -> movieService.deleteMovie(999L));
+        assertEquals("Movie not found", ex.getMessage());
+    }
+//Save Movie List
+   @Test
+    void testSaveMovieList() {
+        Movie movie3 = new Movie();
+        movie3.settitle("The Matrix");
+        movie3.setDescription("A sci-fi action film.");
+        movie3.setDurationInMins(136);
+        movie3.setLanguage("English");
+        movie3.setReleaseDate("1999-03-31");
+        movie3.setCountry("USA");
+        movie3.setGenres(Arrays.asList(action));
+        movie3.setImage("No");
+        movie3.setActors("People");
+
+        List<Movie> movies = Arrays.asList(movie1,movie3);
+        MyApiResponse savedMovies = movieService.saveMovieList(movies);
+
+        assertEquals("Success", savedMovies.getMessage());
+    }
+//Test get exited movie by title
+    @Test
+    void testGetMatchingName() {
+        List<MovieInfoResponse> movies = movieService.getMatchingName("Titanic",1,10);
+        assertFalse(movies.isEmpty());
+        assertEquals("Titanic", movies.get(0).getTitle());
+    }
+//Test get not exited movie by title
+    @Test
+    void testGetMatchingName_NoExist() {
+        List<MovieInfoResponse> movies = movieService.getMatchingName("123favotan",1,10);
+        assertTrue(movies.isEmpty());
+    }
+// Test get movie by exited genre
+    @Test
+    void testGetMatchingGenre() {
+        Object[] movies = movieService.getMatchingGenre("Drama",1,10);
+        assertTrue(movies.length>0);
+    }
+// Test get movie by not exited genre
+    @Test
+    void testGetMatchingGenre_NotExist() {
+        Object[] movies = movieService.getMatchingGenre("Phim_hom_nay",1,10);
+        assertTrue(movies.length==0);
     }
 
 }
