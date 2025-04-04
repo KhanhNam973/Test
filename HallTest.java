@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Transactional // Ensures database rolls back after each test
-class CinemaHallImplTest {
+class HallTest {
 
     @Autowired
     private CinemaHallService cinemaHallService;
