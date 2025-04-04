@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Transactional
-class CinemaSeatServiceImplTest {
+class SeatTest {
 
     @Autowired
     private CinemaSeatRepository hallSeatRepo;
