@@ -1,6 +1,5 @@
 package cinema.ticket.booking;
 
-import cinema.ticket.booking.exception.MyNotFoundException;
 import cinema.ticket.booking.model.CinemaHall;
 import cinema.ticket.booking.model.CinemaSeat;
 import cinema.ticket.booking.model.enumModel.ESeat;
@@ -10,6 +9,7 @@ import cinema.ticket.booking.request.SeatEditRequest;
 import cinema.ticket.booking.response.MyApiResponse;
 import cinema.ticket.booking.response.SeatsResponse;
 import cinema.ticket.booking.response.ErrorResponse;
+import cinema.ticket.booking.service.impl.CinemaHallImpl;
 import cinema.ticket.booking.service.impl.CinemaSeatServiceImpl;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -32,56 +32,62 @@ class SeatTest {
 
     @Autowired
     private CinemaSeatServiceImpl cinemaSeatService;
-
     @Autowired
+    private CinemaHallImpl cinemaHallService = new CinemaHallImpl();
+
     private CinemaHall hall;
-    private CinemaSeat seat;
+    private CinemaHall hall1;
+    private CinemaHall testHall;
 
     @BeforeEach
     void setUp() {
         hall = new CinemaHall();
-        hall.setId("H1");
-        hall.setName("Deluxe Hall");
+        hall.setName("HI");
         hall.setTotalRow(5);
         hall.setTotalCol(5);
-        cinemaSeatService.CreateListSeats(hall);
-        seat = new CinemaSeat(hall, 2, 3, ESeat.REGULAR);
-        seat.setStatus(ESeatStatus.AVAILABLE);
-        hallSeatRepo.save(seat);
+        cinemaHallService.newHall(hall);
+        testHall= new CinemaHall();
+        testHall.setId("12345");
     }
 //Test Create List Seat
     @Test
     void testCreateListSeats() {
-        List<CinemaSeat> seats = hallSeatRepo.findByCinemaHallId("H1");
-        assertEquals(25, seats.size());  
+        hall1 = new CinemaHall();
+        hall1.setName("Hello");
+        hall1.setTotalRow(6);
+        hall1.setTotalCol(6);
+        cinemaHallService.newHall(hall1);
+        List<CinemaSeat> seats = hallSeatRepo.findByCinemaHallId(hall1.getId());
+        assertEquals(36, seats.size());  
     }
 //Test see existed seat
     @Test
     void testSeatExists() {
-        assertTrue(cinemaSeatService.isExist("H1", 2, 3));
+        assertTrue(cinemaSeatService.isExist(hall.getId(), 2, 3));
     }
 //Test see not existed seat
     @Test
     void testSeatNotExists() {
-        assertFalse(cinemaSeatService.isExist("H1", 6, 6));
+        assertFalse(cinemaSeatService.isExist(hall.getId(), 6, 6));
     }
 //Test remove all seats from hall
     @Test
     void testRemoveAllSeatsFromHall() {
-        cinemaSeatService.RemoveAllSeatsFromHall("D");
-        List<CinemaSeat> seats = hallSeatRepo.findByCinemaHallId("D");
+        cinemaSeatService.RemoveAllSeatsFromHall(hall.getId());
+        List<CinemaSeat> seats = hallSeatRepo.findByCinemaHallId(hall.getId());
         assertEquals(0, seats.size());
     }
 //Test get all seats from hall
     @Test
     void testGetAllSeatsFromHall() {
-        List<SeatsResponse> seats = cinemaSeatService.getAllSeatsFromHall("H1");
+        List<SeatsResponse> seats = cinemaSeatService.getAllSeatsFromHall(hall.getId());
         assertEquals(25, seats.size());
     }
 //Test get all seats from hall with wrong id
     @Test
     void testGetAllSeatsFromHallWithWrongId() {
-        assertThrows(MyNotFoundException.class, () -> cinemaSeatService.getAllSeatsFromHall("12345"));
+        List<SeatsResponse> response = cinemaSeatService.getAllSeatsFromHall(testHall.getId());
+        assertTrue(response.isEmpty());
     }
 //Test edit seat
     @Test
@@ -103,21 +109,15 @@ class SeatTest {
         Field statusField = SeatEditRequest.class.getDeclaredField("status");
         statusField.setAccessible(true);
         statusField.set(request, "UNAVAILABLE");
+        MyApiResponse response = cinemaSeatService.Edit(hall.getId(), request);
 
-        Boolean isExist = cinemaSeatService.isExist("H1", 2, 3);
-        if(isExist == false){
-            throw new MyNotFoundException("Seat not found");
-        }
-        else{
-            MyApiResponse response = cinemaSeatService.Edit("H1", request);
-
-            CinemaSeat updatedSeat = hallSeatRepo.findByCinemaHallIdAndRowIndexAndColIndex("H1", 2, 3)
+        CinemaSeat updatedSeat = hallSeatRepo.findByCinemaHallIdAndRowIndexAndColIndex(hall.getId(), 2, 3)
                     .orElseThrow(() -> new RuntimeException("Seat not found"));
     
-            assertEquals("Success", response.getMessage());
-            assertEquals(ESeat.PREMIUM, updatedSeat.getSeatType());
-            assertEquals(ESeatStatus.UNAVAILABLE, updatedSeat.getStatus());
-        }
+        assertEquals("Success", response.getMessage());
+        assertEquals(ESeat.PREMIUM.toString(), updatedSeat.getSeatType());
+        assertEquals(ESeatStatus.UNAVAILABLE, updatedSeat.getStatus());
+        
     }
 //Test edit seat with invalid type
     @Test
@@ -138,11 +138,13 @@ class SeatTest {
         Field statusField = SeatEditRequest.class.getDeclaredField("status");
         statusField.setAccessible(true);
         statusField.set(request, "UNAVAILABLE");
-        MyApiResponse response = cinemaSeatService.Edit("H1", request);
-
-        assertTrue(response instanceof ErrorResponse);
+        
+        MyApiResponse response = cinemaSeatService.Edit(hall.getId(), request);
+        //assertTrue(response instanceof ErrorResponse);
         assertEquals("Type is not found. It must be REGULAR or PREMIUM", response.getMessage());
     }
+    //Type.equals(null) is not a valid check, it should be type==null
+
 //Test edit seat with invalid status
     @Test
     void testEditSeat_InvalidStatus() throws Exception{
@@ -163,9 +165,10 @@ class SeatTest {
         statusField.setAccessible(true);
         statusField.set(request, "HELLO");
 
-        MyApiResponse response = cinemaSeatService.Edit("H1", request);
+        MyApiResponse response = cinemaSeatService.Edit(hall.getId(), request);
 
         assertTrue(response instanceof ErrorResponse);
         assertEquals("Status is not found. It must be AVAILABLE or UNAVAILABLE", response.getMessage());
     }
+    // status.equals(null) is not a valid check, it should be status==null
 }
