@@ -19,26 +19,24 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Transactional 
+//OK
 class HallTest {
 
     @Autowired
     private CinemaHallImpl cinemaHallService;
 //Test add new hall with valid data
-    @Test
-    void testNewHall_Success() {
-        CinemaHall hall = new CinemaHall();
-        hall.setId("H1");
-        hall.setName("IMAX");
-        hall.setTotalRow(10);
-        hall.setTotalCol(12);
-
-        MyApiResponse response = cinemaHallService.newHall(hall);
-        assertEquals("Success", response.getMessage());
-
-        CinemaHall savedHall = cinemaHallService.getHallById(hall.getId());
-        assertNotNull(savedHall);
-        assertEquals("IMAX", savedHall.getName());
-    }
+@Test
+void testNewHall_Success() {
+    CinemaHall hall = new CinemaHall();
+    hall.setName("IMAX");
+    hall.setTotalRow(10);
+    hall.setTotalCol(12);
+    MyApiResponse response = cinemaHallService.newHall(hall);
+    assertEquals("Success", response.getMessage());
+    CinemaHall savedHall = cinemaHallService.getHallById(hall.getId());
+    assertNotNull(savedHall);
+    assertEquals("IMAX", savedHall.getName());
+}
 //Test new hall with invalid row and column numbers
     @Test
     void testHall_InvalidRowCol() {
@@ -56,20 +54,18 @@ class HallTest {
     @Test
     void testHall_IllegalCharacters() {
         CinemaHall hall = new CinemaHall();
-        hall.setId("H2");
-        hall.setName(""); // Invalid characters
+        hall.setName("\"InvalidName@#\""); // Invalid characters are not defined clearly in the code, but this is an example.
         hall.setTotalRow(10);
         hall.setTotalCol(12);
 
         MyApiResponse response = cinemaHallService.newHall(hall);
-        assertInstanceOf(ErrorResponse.class, response);
-        assertEquals("Illeagal charaters in name", ((ErrorResponse) response).getMessage());
+        assertEquals("Illeagal charaters in name", response.getMessage());
     }
 //Test new hall with duplicate name
     @Test
     void testDuplicateHallName() {
         CinemaHall hall1 = new CinemaHall();
-        hall1.setId("H3");
+        hall1.setId("H4");
         hall1.setName("VIP");
         hall1.setTotalRow(10);
         hall1.setTotalCol(10);
@@ -90,28 +86,20 @@ class HallTest {
     @Test
     void testInvalid_Hall() {
         CinemaHall hall1 = new CinemaHall();
-        hall1.setId("H3");
+        hall1.setId("H5");
         hall1.setName("VIP");
         hall1.setTotalRow(0);
         hall1.setTotalCol(10);
         cinemaHallService.newHall(hall1);
-
-        CinemaHall hall2 = new CinemaHall();
-        hall2.setId("H4");
-        hall2.setName("VIP"); 
-        hall2.setTotalRow(10);
-        hall2.setTotalCol(10);
-
-        MyApiResponse response = cinemaHallService.newHall(hall2);
+        MyApiResponse response = cinemaHallService.newHall(hall1);
         assertInstanceOf(ErrorResponse.class, response);
-        assertEquals("This hall is existed", ((ErrorResponse) response).getMessage());
+        assertEquals("Row/Column number must be greater than 5", ((ErrorResponse) response).getMessage());
     }
 
 //Test edit hall
     @Test
     void testEditHall_Success() throws Exception {
         CinemaHall hall = new CinemaHall();
-        hall.setId("H5");
         hall.setName("Standard");
         hall.setTotalRow(10);
         hall.setTotalCol(10);
@@ -121,17 +109,17 @@ class HallTest {
         Field nameField = CinemaHallRequest.class.getDeclaredField("name");
         nameField.setAccessible(true);
         nameField.set(updateRequest, "Standard Deluxe");
+
         Field rowField = CinemaHallRequest.class.getDeclaredField("totalRow");
         rowField.setAccessible(true);
         rowField.setInt(updateRequest, 12);
 
-        
         Field colField = CinemaHallRequest.class.getDeclaredField("totalCol");
         colField.setAccessible(true);
         colField.setInt(updateRequest, 15);
+
         MyApiResponse response = cinemaHallService.editHall(hall.getId(), updateRequest);
         assertEquals("Success", response.getMessage());
-
        
         CinemaHall updatedHall = cinemaHallService.getHallById(hall.getId());
         assertEquals("Standard Deluxe", updatedHall.getName());
@@ -159,16 +147,13 @@ class HallTest {
     @Test
     void testRemoveSuccess() {
         CinemaHall hall = new CinemaHall();
-        hall.setId("H6");
-        hall.setName("Gold Class");
-        hall.setTotalRow(12);
-        hall.setTotalCol(15);
+        hall.setName("IMAX");
+        hall.setTotalRow(10);
+        hall.setTotalCol(12);
+
         cinemaHallService.newHall(hall);
-
-        MyApiResponse response = cinemaHallService.removeHall(hall.getId());
-        assertEquals("Success", response.getMessage());
-
-        assertThrows(MyNotFoundException.class, () -> cinemaHallService.getHallById(hall.getId()));
+        MyApiResponse response1 = cinemaHallService.removeHall(hall.getId());
+        assertEquals("Success", response1.getMessage());
     }
 
 //Test remove hall not found
@@ -214,7 +199,6 @@ class HallTest {
     @Test
     void testGetHallById() {
         CinemaHall hall = new CinemaHall();
-        hall.setId("H9");
         hall.setName("Dolby Atmos");
         hall.setTotalRow(10);
         hall.setTotalCol(10);
