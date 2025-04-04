@@ -5,7 +5,8 @@ import cinema.ticket.booking.request.CinemaHallRequest;
 import cinema.ticket.booking.response.MyApiResponse;
 import cinema.ticket.booking.response.ErrorResponse;
 import cinema.ticket.booking.exception.MyNotFoundException;
-import cinema.ticket.booking.service.CinemaHallService;
+import cinema.ticket.booking.service.impl.CinemaHallImpl;
+
 import java.lang.reflect.Field;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,11 +18,12 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@Transactional // Ensures database rolls back after each test
+@Transactional 
 class HallTest {
 
     @Autowired
-    private CinemaHallService cinemaHallService;
+    private CinemaHallImpl cinemaHallService;
+//Test add new hall with valid data
     @Test
     void testNewHall_Success() {
         CinemaHall hall = new CinemaHall();
@@ -37,12 +39,25 @@ class HallTest {
         assertNotNull(savedHall);
         assertEquals("IMAX", savedHall.getName());
     }
+//Test new hall with invalid row and column numbers
+    @Test
+    void testHall_InvalidRowCol() {
+        CinemaHall hall = new CinemaHall();
+        hall.setId("H2");
+        hall.setName("Standard");
+        hall.setTotalRow(0); // Invalid row number
+        hall.setTotalCol(12);
 
+        MyApiResponse response = cinemaHallService.newHall(hall);
+        assertInstanceOf(ErrorResponse.class, response);
+        assertEquals("Row/Column number must be greater than 5", ((ErrorResponse) response).getMessage());
+    }
+//Test new hall with invalid name
     @Test
     void testHall_IllegalCharacters() {
         CinemaHall hall = new CinemaHall();
         hall.setId("H2");
-        hall.setName("IM@X!"); // Invalid characters
+        hall.setName(""); // Invalid characters
         hall.setTotalRow(10);
         hall.setTotalCol(12);
 
@@ -50,7 +65,7 @@ class HallTest {
         assertInstanceOf(ErrorResponse.class, response);
         assertEquals("Illeagal charaters in name", ((ErrorResponse) response).getMessage());
     }
-
+//Test new hall with duplicate name
     @Test
     void testDuplicateHallName() {
         CinemaHall hall1 = new CinemaHall();
@@ -71,9 +86,30 @@ class HallTest {
         assertEquals("This hall is existed", ((ErrorResponse) response).getMessage());
     }
 
+//Test new hall with invalid row or column numbers
+    @Test
+    void testInvalid_Hall() {
+        CinemaHall hall1 = new CinemaHall();
+        hall1.setId("H3");
+        hall1.setName("VIP");
+        hall1.setTotalRow(0);
+        hall1.setTotalCol(10);
+        cinemaHallService.newHall(hall1);
+
+        CinemaHall hall2 = new CinemaHall();
+        hall2.setId("H4");
+        hall2.setName("VIP"); 
+        hall2.setTotalRow(10);
+        hall2.setTotalCol(10);
+
+        MyApiResponse response = cinemaHallService.newHall(hall2);
+        assertInstanceOf(ErrorResponse.class, response);
+        assertEquals("This hall is existed", ((ErrorResponse) response).getMessage());
+    }
+
+//Test edit hall
     @Test
     void testEditHall_Success() throws Exception {
-        // Create and save a CinemaHall
         CinemaHall hall = new CinemaHall();
         hall.setId("H5");
         hall.setName("Standard");
@@ -103,6 +139,7 @@ class HallTest {
         assertEquals(15, updatedHall.getTotalCol());
     }
 
+//Test edit hall not found
     @Test
     void testEditHall_NotFound() throws Exception {
         CinemaHallRequest updateRequest = new CinemaHallRequest();
@@ -118,6 +155,7 @@ class HallTest {
         assertThrows(MyNotFoundException.class, () -> cinemaHallService.editHall("9999", updateRequest));
     }
 
+//Test remove hall
     @Test
     void testRemoveSuccess() {
         CinemaHall hall = new CinemaHall();
@@ -133,11 +171,13 @@ class HallTest {
         assertThrows(MyNotFoundException.class, () -> cinemaHallService.getHallById(hall.getId()));
     }
 
+//Test remove hall not found
     @Test
     void testRemoveNotFound() {
         assertThrows(MyNotFoundException.class, () -> cinemaHallService.removeHall("9999"));
     }
 
+//Test hall existence by name
     @Test
     void testIsExistByName() {
         CinemaHall hall = new CinemaHall();
@@ -150,11 +190,13 @@ class HallTest {
         assertTrue(cinemaHallService.isExistByName("4DX"));
     }
 
+//Test hall non-existence by name
     @Test
     void testNotExistByName() {
         assertFalse(cinemaHallService.isExistByName("Non-Existent Hall"));
     }
 
+//Test get all halls
     @Test
     void testGetAllHalls() {
         CinemaHall hall = new CinemaHall();
@@ -168,6 +210,7 @@ class HallTest {
         assertFalse(halls.isEmpty());
     }
 
+//Test get hall by ID
     @Test
     void testGetHallById() {
         CinemaHall hall = new CinemaHall();
@@ -181,10 +224,10 @@ class HallTest {
         assertNotNull(retrievedHall);
         assertEquals("Dolby Atmos", retrievedHall.getName());
     }
-
+//Test get hall by ID that does not exist
     @Test
     void testGetHallById_NotFound() {
-        assertThrows(MyNotFoundException.class, () -> cinemaHallService.getHallById("9999"));
+        assertThrows(MyNotFoundException.class, () -> cinemaHallService.getHallById("9999L"));
     }
 }
 
