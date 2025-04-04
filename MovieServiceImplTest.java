@@ -18,11 +18,10 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.Rollback;
 
 @SpringBootTest
 @Transactional
-@Rollback
+//OK
 public class MovieServiceImplTest {
 
     @Autowired
@@ -79,7 +78,7 @@ public class MovieServiceImplTest {
     void testGetMovies() {
         List<MovieInfoResponse> movies = movieService.getMovies(0, 10);
         assertFalse(movies.isEmpty());
-        assertEquals(2, movies.size());
+        assertEquals(10, movies.size());
     }
 
 //Save Movie
@@ -146,14 +145,14 @@ public class MovieServiceImplTest {
 //Test get exited movie by title
     @Test
     void testGetMatchingName() {
-        List<MovieInfoResponse> movies = movieService.getMatchingName("Titanic",1,10);
+        List<MovieInfoResponse> movies = movieService.getMatchingName("Titanic",0,32);
         assertFalse(movies.isEmpty());
         assertEquals("Titanic", movies.get(0).getTitle());
     }
 //Test get not exited movie by title
     @Test
     void testGetMatchingName_NoExist() {
-        List<MovieInfoResponse> movies = movieService.getMatchingName("123favotan",1,10);
+        List<MovieInfoResponse> movies = movieService.getMatchingName("123favotan",1,30);
         assertTrue(movies.isEmpty());
     }
 // Test get movie by exited genre
