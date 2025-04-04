@@ -4,7 +4,7 @@ import cinema.ticket.booking.repository.GenreReposity;
 import cinema.ticket.booking.response.MyApiResponse;
 import cinema.ticket.booking.exception.MyBadRequestException;
 import cinema.ticket.booking.exception.MyNotFoundException;
-import cinema.ticket.booking.service.GenreService;
+import cinema.ticket.booking.service.impl.GenreServiceImpl;
 
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class GenreServiceImplTest {
 
     @Autowired
-    private GenreService genreService;
+    private GenreServiceImpl genreService;
 
     @Autowired
     private GenreReposity genreReposity;
