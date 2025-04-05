@@ -37,9 +37,9 @@ void testNewHall_Success() {
     assertNotNull(savedHall);
     assertEquals("IMAX", savedHall.getName());
 }
-//Test new hall with invalid row and column numbers
+//Test new hall with invalid row number
     @Test
-    void testHall_InvalidRowCol() {
+    void testHall_InvalidRow() {
         CinemaHall hall = new CinemaHall();
         hall.setId("H2");
         hall.setName("Standard");
@@ -82,14 +82,27 @@ void testNewHall_Success() {
         assertEquals("This hall is existed", ((ErrorResponse) response).getMessage());
     }
 
-//Test new hall with invalid row or column numbers
+//Test new hall with invalid column number
     @Test
-    void testInvalid_Hall() {
+    void testInvalid_HallCol() {
         CinemaHall hall1 = new CinemaHall();
         hall1.setId("H5");
         hall1.setName("VIP");
-        hall1.setTotalRow(0);
-        hall1.setTotalCol(10);
+        hall1.setTotalRow(12);
+        hall1.setTotalCol(0);
+        cinemaHallService.newHall(hall1);
+        MyApiResponse response = cinemaHallService.newHall(hall1);
+        assertInstanceOf(ErrorResponse.class, response);
+        assertEquals("Row/Column number must be greater than 5", ((ErrorResponse) response).getMessage());
+    }
+//Test new hall with invalid column and column number
+    @Test
+    void testInvalid_HallRowCol() {
+        CinemaHall hall1 = new CinemaHall();
+        hall1.setId("H5");
+        hall1.setName("VIP");
+        hall1.setTotalRow(2);
+        hall1.setTotalCol(2);
         cinemaHallService.newHall(hall1);
         MyApiResponse response = cinemaHallService.newHall(hall1);
         assertInstanceOf(ErrorResponse.class, response);
@@ -133,14 +146,122 @@ void testNewHall_Success() {
         CinemaHallRequest updateRequest = new CinemaHallRequest();
         Field nameField = CinemaHallRequest.class.getDeclaredField("name");
         nameField.setAccessible(true);
-        nameField.set(updateRequest, "Non-Existent Hall");
+        nameField.set(updateRequest, "Standard Deluxe");
         Field rowField = CinemaHallRequest.class.getDeclaredField("totalRow");
         rowField.setAccessible(true);
         rowField.setInt(updateRequest, 10);
         Field colField = CinemaHallRequest.class.getDeclaredField("totalCol");
         colField.setAccessible(true);
         colField.setInt(updateRequest, 10);
-        assertThrows(MyNotFoundException.class, () -> cinemaHallService.editHall("9999", updateRequest));
+        MyNotFoundException f=assertThrows(MyNotFoundException.class, () -> cinemaHallService.editHall("9999", updateRequest));
+        assertEquals("Hall is not found", f.getMessage());
+    }
+
+    //Test edit hall invalid row
+    @Test
+    void testEditHall_invalidRowOrColumn() throws Exception {
+        CinemaHall hall = new CinemaHall();
+        hall.setName("Standard");
+        hall.setTotalRow(10);
+        hall.setTotalCol(10);
+        cinemaHallService.newHall(hall);
+        CinemaHallRequest updateRequest = new CinemaHallRequest();
+
+        Field nameField = CinemaHallRequest.class.getDeclaredField("name");
+        nameField.setAccessible(true);
+        nameField.set(updateRequest, "Standard Deluxe");
+
+        Field rowField = CinemaHallRequest.class.getDeclaredField("totalRow");
+        rowField.setAccessible(true);
+        rowField.setInt(updateRequest, 0);
+
+        Field colField = CinemaHallRequest.class.getDeclaredField("totalCol");
+        colField.setAccessible(true);
+        colField.setInt(updateRequest, 15);
+
+        MyApiResponse response = cinemaHallService.editHall(hall.getId(), updateRequest);
+        assertEquals("Row/Column number must be greater than 5", (response).getMessage());
+    //Save row or column number less than 5=> wrong
+    }
+
+    //Test edit hall invalid row
+    @Test
+    void testEditHall_invalidColumn() throws Exception {
+        CinemaHall hall = new CinemaHall();
+        hall.setName("Standard");
+        hall.setTotalRow(10);
+        hall.setTotalCol(10);
+        cinemaHallService.newHall(hall);
+        CinemaHallRequest updateRequest = new CinemaHallRequest();
+
+        Field nameField = CinemaHallRequest.class.getDeclaredField("name");
+        nameField.setAccessible(true);
+        nameField.set(updateRequest, "Standard Deluxe");
+
+        Field rowField = CinemaHallRequest.class.getDeclaredField("totalRow");
+        rowField.setAccessible(true);
+        rowField.setInt(updateRequest, 12);
+
+        Field colField = CinemaHallRequest.class.getDeclaredField("totalCol");
+        colField.setAccessible(true);
+        colField.setInt(updateRequest, 0);
+
+        MyApiResponse response = cinemaHallService.editHall(hall.getId(), updateRequest);
+        assertEquals("Row/Column number must be greater than 5", (response).getMessage());
+    //Save row or column number less than 5=> wrong
+    }
+
+    //Test edit hall invalid row
+    @Test
+    void testEditHall_invalidRowAndColumn() throws Exception {
+        CinemaHall hall = new CinemaHall();
+        hall.setName("Standard");
+        hall.setTotalRow(10);
+        hall.setTotalCol(10);
+        cinemaHallService.newHall(hall);
+        CinemaHallRequest updateRequest = new CinemaHallRequest();
+
+        Field nameField = CinemaHallRequest.class.getDeclaredField("name");
+        nameField.setAccessible(true);
+        nameField.set(updateRequest, "Standard Deluxe");
+
+        Field rowField = CinemaHallRequest.class.getDeclaredField("totalRow");
+        rowField.setAccessible(true);
+        rowField.setInt(updateRequest, 2);
+
+        Field colField = CinemaHallRequest.class.getDeclaredField("totalCol");
+        colField.setAccessible(true);
+        colField.setInt(updateRequest, 2);
+
+        MyApiResponse response = cinemaHallService.editHall(hall.getId(), updateRequest);
+        assertEquals("Row/Column number must be greater than 5", (response).getMessage());
+    //Save row or column number less than 5=> wrong
+    }
+
+    @Test
+    void testEditHall_invalidName() throws Exception {
+        CinemaHall hall = new CinemaHall();
+        hall.setName("Standard");
+        hall.setTotalRow(10);
+        hall.setTotalCol(10);
+        cinemaHallService.newHall(hall);
+        CinemaHallRequest updateRequest = new CinemaHallRequest();
+
+        Field nameField = CinemaHallRequest.class.getDeclaredField("name");
+        nameField.setAccessible(true);
+        nameField.set(updateRequest, "@@@@@");
+
+        Field rowField = CinemaHallRequest.class.getDeclaredField("totalRow");
+        rowField.setAccessible(true);
+        rowField.setInt(updateRequest, 12);
+
+        Field colField = CinemaHallRequest.class.getDeclaredField("totalCol");
+        colField.setAccessible(true);
+        colField.setInt(updateRequest, 15);
+
+        MyApiResponse response = cinemaHallService.editHall(hall.getId(), updateRequest);
+        assertEquals("Illeagal charaters in name", (response).getMessage());
+    //name is not defined invalid when
     }
 
 //Test remove hall
@@ -159,7 +280,8 @@ void testNewHall_Success() {
 //Test remove hall not found
     @Test
     void testRemoveNotFound() {
-        assertThrows(MyNotFoundException.class, () -> cinemaHallService.removeHall("9999"));
+        MyNotFoundException f= assertThrows(MyNotFoundException.class, () -> cinemaHallService.removeHall("9999"));
+        assertEquals("Hall is not found", f.getMessage());
     }
 
 //Test hall existence by name
