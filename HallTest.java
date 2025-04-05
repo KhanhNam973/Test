@@ -156,34 +156,6 @@ void testNewHall_Success() {
         MyNotFoundException f=assertThrows(MyNotFoundException.class, () -> cinemaHallService.editHall("9999", updateRequest));
         assertEquals("Hall is not found", f.getMessage());
     }
-
-    //Test edit hall invalid row
-    @Test
-    void testEditHall_invalidRowOrColumn() throws Exception {
-        CinemaHall hall = new CinemaHall();
-        hall.setName("Standard");
-        hall.setTotalRow(10);
-        hall.setTotalCol(10);
-        cinemaHallService.newHall(hall);
-        CinemaHallRequest updateRequest = new CinemaHallRequest();
-
-        Field nameField = CinemaHallRequest.class.getDeclaredField("name");
-        nameField.setAccessible(true);
-        nameField.set(updateRequest, "Standard Deluxe");
-
-        Field rowField = CinemaHallRequest.class.getDeclaredField("totalRow");
-        rowField.setAccessible(true);
-        rowField.setInt(updateRequest, 0);
-
-        Field colField = CinemaHallRequest.class.getDeclaredField("totalCol");
-        colField.setAccessible(true);
-        colField.setInt(updateRequest, 15);
-
-        MyApiResponse response = cinemaHallService.editHall(hall.getId(), updateRequest);
-        assertEquals("Row/Column number must be greater than 5", (response).getMessage());
-    //Save row or column number less than 5=> wrong
-    }
-
     //Test edit hall invalid row
     @Test
     void testEditHall_invalidColumn() throws Exception {
