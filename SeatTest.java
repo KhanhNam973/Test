@@ -1,5 +1,6 @@
 package cinema.ticket.booking;
 
+import cinema.ticket.booking.exception.MyNotFoundException;
 import cinema.ticket.booking.model.CinemaHall;
 import cinema.ticket.booking.model.CinemaSeat;
 import cinema.ticket.booking.model.enumModel.ESeat;
@@ -63,7 +64,7 @@ class SeatTest {
 //Test see existed seat
     @Test
     void testSeatExists() {
-        assertTrue(cinemaSeatService.isExist(hall.getId(), 2, 3));
+        assertTrue(cinemaSeatService.isExist(hall.getId(), 10, 10));
     }
 //Test see not existed seat
     @Test
@@ -118,6 +119,33 @@ class SeatTest {
         assertEquals(ESeat.PREMIUM.toString(), updatedSeat.getSeatType());
         assertEquals(ESeatStatus.UNAVAILABLE, updatedSeat.getStatus());
         
+    }
+    //Test edit non-existing seat
+    @Test
+    void testEditSeat_NoExist() throws Exception {
+        SeatEditRequest request = new SeatEditRequest();
+
+        Field rowField = SeatEditRequest.class.getDeclaredField("row");
+        rowField.setAccessible(true);
+        rowField.setInt(request, 6); 
+        
+        Field colField = SeatEditRequest.class.getDeclaredField("col");
+        colField.setAccessible(true);
+        colField.setInt(request, 6);
+    
+        Field typeField = SeatEditRequest.class.getDeclaredField("type");
+        typeField.setAccessible(true);
+        typeField.set(request, "PREMIUM");  
+        
+        Field statusField = SeatEditRequest.class.getDeclaredField("status");
+        statusField.setAccessible(true);
+        statusField.set(request, "UNAVAILABLE");
+        MyNotFoundException exception = assertThrows(
+            MyNotFoundException.class,
+            () -> cinemaSeatService.Edit(hall.getId(), request)
+        );
+    
+        assertEquals("Seat not found", exception.getMessage());
     }
 //Test edit seat with invalid type
     @Test
