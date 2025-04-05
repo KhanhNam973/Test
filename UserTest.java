@@ -40,7 +40,7 @@ import jakarta.transaction.Transactional;
 @SpringBootTest
 @ExtendWith(MockitoExtension.class)
 @Transactional
-class UserTest {
+class UserServiceTest {
 
     @Autowired
     private UserRepository userRepository;
