@@ -1,5 +1,6 @@
 package cinema.ticket.booking;
 
+import cinema.ticket.booking.exception.MyBadRequestException;
 import cinema.ticket.booking.exception.MyNotFoundException;
 import cinema.ticket.booking.model.Genre;
 import cinema.ticket.booking.model.Movie;
@@ -97,6 +98,22 @@ public class MovieServiceImplTest {
         assertNotNull(savedMovie.getId());
         assertEquals("Inception", savedMovie.getTitle());
     }
+//Save Duplicate Movie
+@Test
+void testSaveMovie_Duplicate() {
+    Movie movie = new Movie();
+    movie.settitle("Avengers");
+    movie.setDescription("A mind-bending thriller.");
+    movie.setDurationInMins(148);
+    movie.setLanguage("English");
+    movie.setReleaseDate("2010-07-16");
+    movie.setCountry("USA");
+    movie.setGenres(Arrays.asList(action));
+
+    MyBadRequestException savedMovie = assertThrows(MyBadRequestException.class, () -> movieService.saveMovie(movie));
+    assertEquals("This title is existed", savedMovie.getMessage());
+}
+
 //Get Movies By ID
     @Test
     void testGetMovieById() {
@@ -145,26 +162,26 @@ public class MovieServiceImplTest {
 //Test get exited movie by title
     @Test
     void testGetMatchingName() {
-        List<MovieInfoResponse> movies = movieService.getMatchingName("Titanic",0,32);
+        List<MovieInfoResponse> movies = movieService.getMatchingName("Titanic",0,10);
         assertFalse(movies.isEmpty());
         assertEquals("Titanic", movies.get(0).getTitle());
     }
 //Test get not exited movie by title
     @Test
     void testGetMatchingName_NoExist() {
-        List<MovieInfoResponse> movies = movieService.getMatchingName("123favotan",1,30);
+        List<MovieInfoResponse> movies = movieService.getMatchingName("123 favotan",0,32);
         assertTrue(movies.isEmpty());
     }
 // Test get movie by exited genre
     @Test
     void testGetMatchingGenre() {
-        Object[] movies = movieService.getMatchingGenre("Drama",1,10);
+        Object[] movies = movieService.getMatchingGenre("Drama",0,32);
         assertTrue(movies.length>0);
     }
 // Test get movie by not exited genre
     @Test
     void testGetMatchingGenre_NotExist() {
-        Object[] movies = movieService.getMatchingGenre("Phim_hom_nay",1,10);
+        Object[] movies = movieService.getMatchingGenre("Phim_hom_nay",0,32);
         assertTrue(movies.length==0);
     }
 
