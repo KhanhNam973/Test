@@ -59,7 +59,7 @@ class GenreServiceImplTest {
     @Test
     void testGetGenre() {
         Genre foundGenre = genreService.getGenre(1L);
-        assertEquals("science fiction", foundGenre.getGenre());
+        assertEquals("Hi", foundGenre.getGenre());
     }
 
 //Get a genre by ID that does not exist
@@ -74,10 +74,10 @@ void testGetGenre_NoExist() {
         Genre genre = new Genre();
         genre.setGenre("Light novel");
         Genre savedGenre = genreService.saveGenre(genre);
-
         savedGenre.setGenre("Hello World");
         Genre updatedG = genreService.updateGenre(savedGenre);
         assertEquals("Hello World", updatedG.getGenre());
+        assertNotEquals("Light novel", updatedG.getGenre());
     }
     //Update a genre but in the final code use save method
 
@@ -87,8 +87,17 @@ void testGetGenre_NoExist() {
         Genre genre = new Genre();
         genre.setId(9999L);
         genre.setGenre("Non-Existent");
-
-        assertThrows(MyNotFoundException.class, () -> genreService.updateGenre(genre));
+        MyNotFoundException f= assertThrows(MyNotFoundException.class, () -> genreService.updateGenre(genre));
+        assertEquals(f.getMessage(),"Genre ID not found");
+    }
+//Update a genre with a name that already exists
+    @Test
+    void testUpdateGenre_ExistingName() {
+        Genre genre = genreService.getGenre(1L);
+        genre.setGenre("Action");
+        MyBadRequestException f=assertThrows(MyBadRequestException.class, () -> genreService.updateGenre(genre));
+        assertEquals(f.getMessage(), "Can not update this name because another genre has this one");
+        //Wrong message in code
     }
 
 //Delete a genre
@@ -107,7 +116,8 @@ void testGetGenre_NoExist() {
 //Delete a genre that does not exist
     @Test
     void testDeleteGenre_NoExist() {
-        assertThrows(MyNotFoundException.class, () -> genreService.deleteGenre(9999L));
+        MyNotFoundException e=assertThrows(MyNotFoundException.class, () -> genreService.deleteGenre(9999L));
+        assertEquals(e.getMessage(), "Genre ID 9999 not found");
     }
 
 //Save a list of genres
