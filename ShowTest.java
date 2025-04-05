@@ -60,7 +60,9 @@ class ShowTest {
         testShow = new CinemaShow(testHall, movie1, startTime1);
         showRepository.save(testShow);
     }
-// Test add show with valid data
+
+    
+// Test add show with valid date
     @Test
     void testAddShow() throws Exception {
         ShowRequest showRequest = new ShowRequest();
@@ -81,8 +83,34 @@ class ShowTest {
         MyApiResponse response = cinemaShowService.addShow(showRequest);
         assertNotNull(response);
         assertTrue(response.getMessage().length() > 0);
+        assertEquals("Show is saved", response.getMessage());
     }
-//Test add show with invalid data
+    //Test add show with duplicate date
+    @Test
+    void testAddShow_Duplicate() throws Exception {
+        ShowRequest showRequest = new ShowRequest();
+
+        Field cinemaID = showRequest.getClass().getDeclaredField("cinemaID");
+        cinemaID.setAccessible(true);
+        cinemaID.set(showRequest,testHall.getId());
+
+        Field movieID = showRequest.getClass().getDeclaredField("movieID");
+        movieID.setAccessible(true);
+        movieID.set(showRequest, movie1.getId());
+
+        Field startTime = showRequest.getClass().getDeclaredField("start_time");
+        startTime.setAccessible(true);
+        String startTime2="01/05/2025 18:00";
+        startTime.set(showRequest, startTime2);
+
+        MyApiResponse response = cinemaShowService.addShow(showRequest);
+        assertNotNull(response);
+        assertTrue(response.getMessage().length() > 0);
+        assertEquals("Show has existed", response.getMessage());
+        //duplicate date is still saved in database
+    }
+
+//Test add show with invalid date
 @Test
     void testAddShow_WrongData() throws Exception {
         ShowRequest showRequest = new ShowRequest();
@@ -97,15 +125,19 @@ class ShowTest {
 
         Exception exception = assertThrows(MyBadRequestException.class, 
         () -> cinemaShowService.addShow(showRequest));
-        assertEquals(exception.getMessage(),"Invaild date format, it must be dd/MM/yyyy HH:mm");
+        assertEquals(exception.getMessage(),"Invalid date format, it must be dd/MM/yyyy HH:mm");
+        // message in code is "Invaild date format, it must be dd/MM/yyyy HH:mm"=> wrong spelling
     }
+
 //Test get show info by ID
     @Test
     void testGetShowInfo() {
         ShowInfoResponse showInfoResponse = cinemaShowService.getShowInfo(testShow.getId());
-
         assertNotNull(showInfoResponse);
         assertEquals(testShow.getId(), showInfoResponse.getShowID());
+        assertEquals(testShow.getStartTime().toString(), showInfoResponse.getStartTime());
+        assertEquals(testShow.getMovie().getId().toString(), showInfoResponse.getMovieId());
+        assertEquals(testShow.getCinemaHall().getId().toString(), showInfoResponse.getHallId());
         assertTrue(showInfoResponse.getTotalAvailableSeats() >= 0);
         assertTrue(showInfoResponse.getTotalReversedSeats() >= 0);
     }
@@ -117,6 +149,13 @@ class ShowTest {
 
         assertEquals("Show is not found", exception.getMessage());
 }
+//Test get show info by invalid ID with null ID- ID can not be null
+    // @Test
+    // void testGetShowInfo_NullID() {
+    //     Exception exception = assertThrows(MyNotFoundException.class, 
+    //     () -> cinemaShowService.getShowInfo(null));
+    //     assertEquals("Show is not found", exception.getMessage());
+    // }
 //Get all shows
     @Test
     void testGetAllShows() {
@@ -139,7 +178,7 @@ class ShowTest {
 
         Field startTime = updateRequest.getClass().getDeclaredField("start_time");
         startTime.setAccessible(true);
-        String startTime2="03/05/2025 12:00";
+        String startTime2="04/05/2025 12:00";
         startTime.set(updateRequest, startTime2);
         
         MyApiResponse response = cinemaShowService.updateShow(testShow.getId(), updateRequest);
@@ -202,7 +241,7 @@ class ShowTest {
         assertEquals("Show is not found", response.getMessage());
         //code message is "Show is found"
     }
-//Delete show by hall ID and movie ID
+//Delete show by hall ID and movie ID with not null starttime
     @Test
     void testDeleteShowByHallIDMovieID() throws Exception {
         ShowRequest showRequest = new ShowRequest();
