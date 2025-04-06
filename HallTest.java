@@ -37,7 +37,23 @@ void testNewHall_Success() {
     assertNotNull(savedHall);
     assertEquals("IMAX", savedHall.getName());
 }
-//Test new hall with invalid row number
+//Test add new hall with duplcated name
+@Test
+void testNewHall_DuplicateName() {
+    CinemaHall hall = new CinemaHall();
+    hall.setName("IMAX");
+    hall.setTotalRow(10);
+    hall.setTotalCol(12);
+    cinemaHallService.newHall(hall);
+    CinemaHall hall1 = new CinemaHall();
+    hall1.setName("IMAX");
+    hall1.setTotalRow(10);
+    hall1.setTotalCol(12);
+    MyApiResponse response = cinemaHallService.newHall(hall1);
+    assertEquals("This hall is existed", response.getMessage());
+}
+
+//Test new hall with invalid row
     @Test
     void testHall_InvalidRow() {
         CinemaHall hall = new CinemaHall();
@@ -50,6 +66,32 @@ void testNewHall_Success() {
         assertInstanceOf(ErrorResponse.class, response);
         assertEquals("Row/Column number must be greater than 5", ((ErrorResponse) response).getMessage());
     }
+//Test new hall with invalid column number
+@Test
+void testInvalid_HallCol() {
+    CinemaHall hall1 = new CinemaHall();
+    hall1.setId("H5");
+    hall1.setName("VIP");
+    hall1.setTotalRow(12);
+    hall1.setTotalCol(0);
+    cinemaHallService.newHall(hall1);
+    MyApiResponse response = cinemaHallService.newHall(hall1);
+    assertInstanceOf(ErrorResponse.class, response);
+    assertEquals("Row/Column number must be greater than 5", ((ErrorResponse) response).getMessage());
+}
+//Test new hall with invalid column and column number
+@Test
+void testInvalid_HallRowCol() {
+    CinemaHall hall1 = new CinemaHall();
+    hall1.setId("H5");
+    hall1.setName("VIP");
+    hall1.setTotalRow(2);
+    hall1.setTotalCol(2);
+    cinemaHallService.newHall(hall1);
+    MyApiResponse response = cinemaHallService.newHall(hall1);
+    assertInstanceOf(ErrorResponse.class, response);
+    assertEquals("Row/Column number must be greater than 5", ((ErrorResponse) response).getMessage());
+}
 //Test new hall with invalid name
     @Test
     void testHall_IllegalCharacters() {
@@ -80,33 +122,6 @@ void testNewHall_Success() {
         MyApiResponse response = cinemaHallService.newHall(hall2);
         assertInstanceOf(ErrorResponse.class, response);
         assertEquals("This hall is existed", ((ErrorResponse) response).getMessage());
-    }
-
-//Test new hall with invalid column number
-    @Test
-    void testInvalid_HallCol() {
-        CinemaHall hall1 = new CinemaHall();
-        hall1.setId("H5");
-        hall1.setName("VIP");
-        hall1.setTotalRow(12);
-        hall1.setTotalCol(0);
-        cinemaHallService.newHall(hall1);
-        MyApiResponse response = cinemaHallService.newHall(hall1);
-        assertInstanceOf(ErrorResponse.class, response);
-        assertEquals("Row/Column number must be greater than 5", ((ErrorResponse) response).getMessage());
-    }
-//Test new hall with invalid column and column number
-    @Test
-    void testInvalid_HallRowCol() {
-        CinemaHall hall1 = new CinemaHall();
-        hall1.setId("H5");
-        hall1.setName("VIP");
-        hall1.setTotalRow(2);
-        hall1.setTotalCol(2);
-        cinemaHallService.newHall(hall1);
-        MyApiResponse response = cinemaHallService.newHall(hall1);
-        assertInstanceOf(ErrorResponse.class, response);
-        assertEquals("Row/Column number must be greater than 5", ((ErrorResponse) response).getMessage());
     }
 
 //Test edit hall
@@ -156,7 +171,7 @@ void testNewHall_Success() {
         MyNotFoundException f=assertThrows(MyNotFoundException.class, () -> cinemaHallService.editHall("9999", updateRequest));
         assertEquals("Hall is not found", f.getMessage());
     }
-    //Test edit hall invalid row
+    //Test edit hall invalid column
     @Test
     void testEditHall_invalidColumn() throws Exception {
         CinemaHall hall = new CinemaHall();
@@ -183,7 +198,7 @@ void testNewHall_Success() {
     //Save row or column number less than 5=> wrong
     }
 
-    //Test edit hall invalid row
+    //Test edit hall invalid row and column
     @Test
     void testEditHall_invalidRowAndColumn() throws Exception {
         CinemaHall hall = new CinemaHall();
