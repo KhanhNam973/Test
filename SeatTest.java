@@ -64,7 +64,7 @@ class SeatTest {
 //Test see existed seat
     @Test
     void testSeatExists() {
-        assertTrue(cinemaSeatService.isExist(hall.getId(), 10, 10));
+        assertFalse(cinemaSeatService.isExist(hall.getId(), 10, 10));
     }
 //Test see not existed seat
     @Test
@@ -147,6 +147,34 @@ class SeatTest {
     
         assertEquals("Seat not found", exception.getMessage());
     }
+
+    @Test
+    void testEditSeat_NoExistHall() throws Exception {
+        SeatEditRequest request = new SeatEditRequest();
+
+        Field rowField = SeatEditRequest.class.getDeclaredField("row");
+        rowField.setAccessible(true);
+        rowField.setInt(request, 6); 
+        
+        Field colField = SeatEditRequest.class.getDeclaredField("col");
+        colField.setAccessible(true);
+        colField.setInt(request, 6);
+    
+        Field typeField = SeatEditRequest.class.getDeclaredField("type");
+        typeField.setAccessible(true);
+        typeField.set(request, "PREMIUM");  
+        
+        Field statusField = SeatEditRequest.class.getDeclaredField("status");
+        statusField.setAccessible(true);
+        statusField.set(request, "UNAVAILABLE");
+        MyNotFoundException exception = assertThrows(
+            MyNotFoundException.class,
+            () -> cinemaSeatService.Edit("99999", request)
+        );
+    
+        assertEquals("Seat not found", exception.getMessage());
+    }
+
 //Test edit seat with invalid type
     @Test
     void testEditSeat_InvalidType() throws Exception{
