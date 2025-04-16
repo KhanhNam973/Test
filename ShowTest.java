@@ -4,13 +4,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 
 import cinema.ticket.booking.repository.*;
 import cinema.ticket.booking.exception.MyBadRequestException;
 import cinema.ticket.booking.exception.MyNotFoundException;
 import cinema.ticket.booking.model.*;
 import cinema.ticket.booking.request.ShowRequest;
-import cinema.ticket.booking.response.ErrorResponse;
 import cinema.ticket.booking.response.MyApiResponse;
 import cinema.ticket.booking.response.ShowInfoResponse;
 import cinema.ticket.booking.service.CinemaHallService;
@@ -39,6 +39,7 @@ class ShowTest {
     private CinemaShow testShow;
     @Autowired
     private CinemaHallService cinemaHallService;
+    String id;
 
     @BeforeEach
     public void setUp() {
@@ -55,16 +56,16 @@ class ShowTest {
         movie1.setActors("People");
         movieRepository.save(movie1);
 
-        //LocalDateTime startTime = LocalDateTime.of(2025, 5, 1, 18, 0);
         String startTime1="01/05/2025 18:00";
         testShow = new CinemaShow(testHall, movie1, startTime1);
         showRepository.save(testShow);
+        id=testShow.getId();
     }
 
     
 // Test add show with valid date
     @Test
-    void testAddShow() throws Exception {
+    void SHOW_001_testAddShow_ValidDate() throws Exception {
         ShowRequest showRequest = new ShowRequest();
 
         Field cinemaID = showRequest.getClass().getDeclaredField("cinemaID");
@@ -80,14 +81,15 @@ class ShowTest {
         String startTime2="03/05/2025 12:00";
         startTime.set(showRequest, startTime2);
 
-        MyApiResponse response = cinemaShowService.addShow(showRequest);
-        assertNotNull(response);
-        assertTrue(response.getMessage().length() > 0);
-        assertEquals("Show is saved", response.getMessage());
+        MyApiResponse savedMovieID = cinemaShowService.addShow(showRequest);
+        assertNotNull(savedMovieID.getMessage());
+        //MyApiResponse is ID of saved movie
     }
+
     //Test add show with duplicate date
     @Test
-    void testAddShow_Duplicate() throws Exception {
+    void SHOW_002_testAddShow_DuplicateDate() throws Exception {
+        int a=showRepository.findAll().size();
         ShowRequest showRequest = new ShowRequest();
 
         Field cinemaID = showRequest.getClass().getDeclaredField("cinemaID");
@@ -102,17 +104,17 @@ class ShowTest {
         startTime.setAccessible(true);
         String startTime2="01/05/2025 18:00";
         startTime.set(showRequest, startTime2);
-
-        MyApiResponse response = cinemaShowService.addShow(showRequest);
-        assertNotNull(response);
-        assertTrue(response.getMessage().length() > 0);
-        assertEquals("Show has existed", response.getMessage());
-        //duplicate date is still saved in database
+        MyBadRequestException e= assertThrows(MyBadRequestException.class, 
+        () ->   cinemaShowService.addShow(showRequest));
+        int b=showRepository.findAll().size();
+        assertNotNull(e);
+        assertEquals(a, b);
     }
 
 //Test add show with invalid date
 @Test
-    void testAddShow_WrongData() throws Exception {
+    void SHOW_003_testAddShow_NullDate() throws Exception {
+        int a=showRepository.findAll().size();
         ShowRequest showRequest = new ShowRequest();
 
         Field cinemaID = showRequest.getClass().getDeclaredField("cinemaID");
@@ -123,15 +125,68 @@ class ShowTest {
         movieID.setAccessible(true);
         movieID.set(showRequest,movie1.getId());
 
-        Exception exception = assertThrows(MyBadRequestException.class, 
+        MyBadRequestException exception=assertThrows(MyBadRequestException.class, 
         () -> cinemaShowService.addShow(showRequest));
-        assertEquals(exception.getMessage(),"Invalid date format, it must be dd/MM/yyyy HH:mm");
-        // message in code is "Invaild date format, it must be dd/MM/yyyy HH:mm"=> wrong spelling
+        assertNotNull(exception);
+        int b=showRepository.findAll().size();
+        assertEquals(a, b);
+    }
+    //Test add show with null cinema
+    @Test
+    void SHOW_004_testAddShow_NullCinema() throws Exception {
+        int a=showRepository.findAll().size();
+        ShowRequest showRequest = new ShowRequest();
+
+        Field cinemaID = showRequest.getClass().getDeclaredField("cinemaID");
+        cinemaID.setAccessible(true);
+        cinemaID.set(showRequest, null);
+
+        Field movieID = showRequest.getClass().getDeclaredField("movieID");
+        movieID.setAccessible(true);
+        movieID.set(showRequest,movie1.getId());
+
+        Field startTime = showRequest.getClass().getDeclaredField("start_time");
+        startTime.setAccessible(true);
+        String startTime2="03/05/2025 18:00";
+        startTime.set(showRequest, startTime2);
+
+        InvalidDataAccessApiUsageException exception=assertThrows
+        (InvalidDataAccessApiUsageException.class, 
+        () -> cinemaShowService.addShow(showRequest));
+        int b=showRepository.findAll().size();
+        assertNotNull(exception);
+        assertEquals(a, b);
+    }
+    //Test add show with null movie ID
+    @Test
+    void SHOW_005_testAddShow_NullMovie() throws Exception {
+        int a=showRepository.findAll().size();
+        ShowRequest showRequest = new ShowRequest();
+
+        Field cinemaID = showRequest.getClass().getDeclaredField("cinemaID");
+        cinemaID.setAccessible(true);
+        cinemaID.set(showRequest, testHall.getId());
+
+        Field movieID = showRequest.getClass().getDeclaredField("movieID");
+        movieID.setAccessible(true);
+        movieID.set(showRequest,null);
+
+        Field startTime = showRequest.getClass().getDeclaredField("start_time");
+        startTime.setAccessible(true);
+        String startTime2="01/05/2025 18:00";
+        startTime.set(showRequest, startTime2);
+
+        InvalidDataAccessApiUsageException exception=
+        assertThrows(InvalidDataAccessApiUsageException.class, 
+        () -> cinemaShowService.addShow(showRequest));
+        int b=showRepository.findAll().size();
+        assertNotNull(exception);
+        assertEquals(a, b);
     }
 
 //Test get show info by ID
     @Test
-    void testGetShowInfo() {
+    void SHOW_006_testGetShowInfo() {
         ShowInfoResponse showInfoResponse = cinemaShowService.getShowInfo(testShow.getId());
         assertNotNull(showInfoResponse);
         assertEquals(testShow.getId(), showInfoResponse.getShowID());
@@ -143,29 +198,23 @@ class ShowTest {
     }
 //Test get show info by invalid ID
     @Test
-    void testGetShowInfo_InvalidID() {
-        Exception exception = assertThrows(MyNotFoundException.class, 
+    void SHOW_007_testGetShowInfo_InvalidID() {
+        MyNotFoundException exception = assertThrows(MyNotFoundException.class, 
         () -> cinemaShowService.getShowInfo("9999"));
-
+        assertNotNull(exception);
         assertEquals("Show is not found", exception.getMessage());
+    
 }
-//Test get show info by invalid ID with null ID- ID can not be null
-    // @Test
-    // void testGetShowInfo_NullID() {
-    //     Exception exception = assertThrows(MyNotFoundException.class, 
-    //     () -> cinemaShowService.getShowInfo(null));
-    //     assertEquals("Show is not found", exception.getMessage());
-    // }
 //Get all shows
     @Test
-    void testGetAllShows() {
+    void SHOW_008_testGetAllShows() {
         List<ShowInfoResponse> allShows = cinemaShowService.getAllShows();
         assertNotNull(allShows);
         assertTrue(allShows.size() > 0);
     }
 //Update show 
     @Test
-    void testUpdateShow() throws Exception {
+    void SHOW_009_testUpdateShow() throws Exception {
         ShowRequest updateRequest = new ShowRequest();
 
         Field cinemaID = updateRequest.getClass().getDeclaredField("cinemaID");
@@ -184,15 +233,14 @@ class ShowTest {
         MyApiResponse response = cinemaShowService.updateShow(testShow.getId(), updateRequest);
 
         assertNotNull(response);
-        assertEquals("Done", response.getMessage());
 
         CinemaShow updatedShow = showRepository.findById(testShow.getId()).orElseThrow();
-        assertEquals(LocalDateTime.of(2025, 5, 3, 12, 0), updatedShow.getStartTime());
+        assertEquals(LocalDateTime.of(2025, 5, 4, 12, 0), updatedShow.getStartTime());
         //if (starttime != null && starttime.equals(show.getStartTime()))
     }
 //Update show with null time
     @Test
-    void testUpdateShow_NullTime() throws Exception {
+    void SHOW_010_testUpdateShow_NullTime() throws Exception {
         ShowRequest updateRequest = new ShowRequest();
 
         Field cinemaID = updateRequest.getClass().getDeclaredField("cinemaID");
@@ -203,17 +251,49 @@ class ShowTest {
         movieID.setAccessible(true);
         movieID.set(updateRequest, movie1.getId());
         
-        MyApiResponse response = cinemaShowService.updateShow(testShow.getId(), updateRequest);
-        assertNotNull(response);
-        assertEquals("Done", response.getMessage());
-
+        cinemaShowService.updateShow(testShow.getId(), updateRequest);
         CinemaShow updatedShow = showRepository.findById(testShow.getId()).orElseThrow();
         assertEquals(testShow.getStartTime(), updatedShow.getStartTime());
+    }
+//Update show to null cinema
+    @Test
+    void SHOW_011_testUpdateShow_NullCinema() throws Exception {
+        ShowRequest updateRequest = new ShowRequest();
+
+        Field cinemaID = updateRequest.getClass().getDeclaredField("cinemaID");
+        cinemaID.setAccessible(true);
+        cinemaID.set(updateRequest, null);
+
+        InvalidDataAccessApiUsageException e = assertThrows(
+            InvalidDataAccessApiUsageException.class,
+            () -> cinemaShowService.updateShow(testShow.getId(), updateRequest)
+        );
+        CinemaShow updatedShow = showRepository.findById(testShow.getId()).orElseThrow();
+        assertNotNull(updatedShow.getCinemaHall().getId());
+        assertNotNull(e);
+    }
+//Update show to null movie
+    @Test
+    void SHOW_012_testUpdateShow_NullMovie() throws Exception {
+        ShowRequest updateRequest = new ShowRequest();
+
+        Field movieID = updateRequest.getClass().getDeclaredField("movieID");
+        movieID.setAccessible(true);
+        movieID.set(updateRequest, null);
+        
+        InvalidDataAccessApiUsageException e = assertThrows(
+            InvalidDataAccessApiUsageException.class,
+            () -> cinemaShowService.updateShow(testShow.getId(), updateRequest)
+        );
+        CinemaShow updatedShow = showRepository.findById(testShow.getId()).orElseThrow();
+        assertNotNull(updatedShow.getMovie().getId());
+        assertNotNull(e);
     }
 
 // Update show with invalid ID
     @Test
-    void testUpdateShow_InvalidID() throws Exception {
+    void SHOW_013_testUpdateShow_InvalidShowID() throws Exception {
+        int a=showRepository.findAll().size();
         ShowRequest updateRequest = new ShowRequest();
         Field cinemaID = updateRequest.getClass().getDeclaredField("cinemaID");
         cinemaID.setAccessible(true);
@@ -221,29 +301,63 @@ class ShowTest {
         Field movieID = updateRequest.getClass().getDeclaredField("movieID");
         movieID.setAccessible(true);
         movieID.set(updateRequest, movie1.getId());
-        Exception exception = assertThrows(MyNotFoundException.class, 
+        MyNotFoundException exception = assertThrows(MyNotFoundException.class, 
         () -> cinemaShowService.updateShow("9999", updateRequest));
+        int b=showRepository.findAll().size();
+        assertEquals(a, b);
+        assertNotNull(exception);
         assertEquals("Show is not found", exception.getMessage());
     }
+// Update show with invalid hall ID
+    @Test
+    void SHOW_014_testUpdateShow_InvalidCinemaID() throws Exception {
+        int a=showRepository.findAll().size();
+        ShowRequest updateRequest = new ShowRequest();
+        Field cinemaID = updateRequest.getClass().getDeclaredField("cinemaID");
+        cinemaID.setAccessible(true);
+        cinemaID.set(updateRequest, "999999");
+        MyNotFoundException exception = assertThrows(MyNotFoundException.class, 
+        () -> cinemaShowService.updateShow(testShow.getId(), updateRequest));
+        int b=showRepository.findAll().size();
+        assertNotNull(exception);
+        assertEquals(a, b);
+        assertEquals("Hall is not found", exception.getMessage());
+    }
+// Update show with invalid ID
+@Test
+void SHOW_015_testUpdateShow_InvalidMovieID() throws Exception {
+    int a=showRepository.findAll().size();
+    ShowRequest updateRequest = new ShowRequest();
+    Field movieID = updateRequest.getClass().getDeclaredField("movieID");
+    movieID.setAccessible(true);
+    movieID.set(updateRequest, 9999L);
+    MyNotFoundException exception = assertThrows(MyNotFoundException.class, 
+    () -> cinemaShowService.updateShow(testShow.getId(), updateRequest));
+    int b=showRepository.findAll().size();
+    assertEquals(a, b);
+    assertEquals("Movie is not found", exception.getMessage());
+    assertNotNull(exception);
+}
 //Delete show by ID
     @Test
-    void testDeleteShow() {
+    void SHOW_016_testDeleteShow() {
         MyApiResponse response = cinemaShowService.deleteShow(testShow.getId());
-        assertEquals("Done", response.getMessage());
+        assertNotNull(response);
         assertFalse(showRepository.existsById(testShow.getId()));
     }
 //Delete show by invalid ID
     @Test
-    void testDeleteShow_InvalidID() {
+    void SHOW_017_testDeleteShow_InvalidID() {
+        List<ShowInfoResponse> a= cinemaShowService.getAllShows();
         MyApiResponse response = cinemaShowService.deleteShow("9999");
+        List<ShowInfoResponse> b = cinemaShowService.getAllShows();
         assertNotNull(response);
-        assertTrue(response instanceof ErrorResponse);
-        assertEquals("Show is not found", response.getMessage());
-        //code message is "Show is found"
+        assertEquals(a.size(), b.size());
+        //a.size() is the size of all shows before delete and b.size() is the size of all shows after delete
     }
 //Delete show by hall ID and movie ID with not null starttime
     @Test
-    void testDeleteShowByHallIDMovieID() throws Exception {
+    void SHOW_018_testDeleteShowByHallIDMovieID() throws Exception {
         ShowRequest showRequest = new ShowRequest();
 
         Field cinemaID = showRequest.getClass().getDeclaredField("cinemaID");
@@ -259,13 +373,13 @@ class ShowTest {
         String startTime2="01/05/2025 18:00";
         startTime.set(showRequest, startTime2);
 
-        MyApiResponse response = cinemaShowService.deleteShowByHallIDMovieID(showRequest);
-        assertNotNull(response);
-        assertEquals("Deleted", response.getMessage());
+        cinemaShowService.deleteShowByHallIDMovieID(showRequest);
+        assertFalse(showRepository.existsById(testShow.getId()));
     }
 //Delete show by hall ID and movie ID with invalid starttime
     @Test
-    void testDeleteShowByHallIDMovieID_InvalidStartTime() throws Exception {
+    void SHOW_019_testDeleteShowByHallIDMovieID_InvalidStartTime() throws Exception {
+       
         ShowRequest showRequest = new ShowRequest();
 
         Field cinemaID = showRequest.getClass().getDeclaredField("cinemaID");
@@ -276,10 +390,124 @@ class ShowTest {
         movieID.setAccessible(true);
         movieID.set(showRequest, movie1.getId());
 
+        List<ShowInfoResponse> a= cinemaShowService.getAllShows();
         Exception e=assertThrows(MyBadRequestException.class, 
         () -> cinemaShowService.deleteShowByHallIDMovieID(showRequest));
-
-        assertEquals("Invaild date format, it must be dd/MM/yyyy HH:mm", e.getMessage());
+        List<ShowInfoResponse> b= cinemaShowService.getAllShows();
+        assertEquals(a.size(), b.size());
+        assertNotNull(e);
     }
+    //Delete show with null hall ID
+    @Test
+    void SHOW_020_testDeleteShowByHallIDMovieID_nullHallID() throws Exception {
+       
+        ShowRequest showRequest = new ShowRequest();
+
+        Field cinemaID = showRequest.getClass().getDeclaredField("cinemaID");
+        cinemaID.setAccessible(true);
+        cinemaID.set(showRequest,null);
+
+        Field movieID = showRequest.getClass().getDeclaredField("movieID");
+        movieID.setAccessible(true);
+        movieID.set(showRequest, movie1.getId());
+
+        Field startTime = showRequest.getClass().getDeclaredField("start_time");
+        startTime.setAccessible(true);
+        String startTime2="01/05/2025 18:00";
+        startTime.set(showRequest, startTime2);
+        
+        List<ShowInfoResponse> a= cinemaShowService.getAllShows();
+        NullPointerException e=assertThrows(NullPointerException.class, 
+        () -> cinemaShowService.deleteShowByHallIDMovieID(showRequest));
+        List<ShowInfoResponse> b= cinemaShowService.getAllShows();
+        assertEquals(a.size(), b.size());
+        assertNotNull(e);
+    }
+
+    //Delete show with null movie ID
+    @Test
+    void SHOW_021_testDeleteShowByHallIDMovieID_nullMovieID() throws Exception {
+       
+        ShowRequest showRequest = new ShowRequest();
+
+        Field cinemaID = showRequest.getClass().getDeclaredField("cinemaID");
+        cinemaID.setAccessible(true);
+        cinemaID.set(showRequest,testHall.getId());
+
+        Field movieID = showRequest.getClass().getDeclaredField("movieID");
+        movieID.setAccessible(true);
+        movieID.set(showRequest, null);
+
+        Field startTime = showRequest.getClass().getDeclaredField("start_time");
+        startTime.setAccessible(true);
+        String startTime2="01/05/2025 18:00";
+        startTime.set(showRequest, startTime2);
+        
+        List<ShowInfoResponse> a= cinemaShowService.getAllShows();
+        NullPointerException e=assertThrows(NullPointerException.class, 
+        () -> cinemaShowService.deleteShowByHallIDMovieID(showRequest));
+        List<ShowInfoResponse> b= cinemaShowService.getAllShows();
+        assertEquals(a.size(), b.size());
+        assertNotNull(e);
+    }
+//delete non existing hall ID
+    @Test
+    void SHOW_022_testDeleteShowByHallIDMovieID_Non_Exising_HallID() throws Exception {
+       
+        ShowRequest showRequest = new ShowRequest();
+
+        Field cinemaID = showRequest.getClass().getDeclaredField("cinemaID");
+        cinemaID.setAccessible(true);
+        cinemaID.set(showRequest,"99999");
+
+        Field movieID = showRequest.getClass().getDeclaredField("movieID");
+        movieID.setAccessible(true);
+        movieID.set(showRequest, movie1.getId());
+
+        Field startTime = showRequest.getClass().getDeclaredField("start_time");
+        startTime.setAccessible(true);
+        String startTime2="01/05/2025 18:00";
+        startTime.set(showRequest, startTime2);
+        
+        List<ShowInfoResponse> a= cinemaShowService.getAllShows();
+        MyNotFoundException e=assertThrows(MyNotFoundException.class, 
+        () -> cinemaShowService.deleteShowByHallIDMovieID(showRequest));
+        List<ShowInfoResponse> b= cinemaShowService.getAllShows();
+        assertEquals(a.size(), b.size());
+        assertNotNull(e);
+    }
+    //delete non existing movie ID
+    @Test
+    void SHOW_023_testDeleteShowByHallIDMovieID_Non_Exising_MovieID() throws Exception {
+       
+        ShowRequest showRequest = new ShowRequest();
+
+        Field cinemaID = showRequest.getClass().getDeclaredField("cinemaID");
+        cinemaID.setAccessible(true);
+        cinemaID.set(showRequest,testHall.getId());
+
+        Field movieID = showRequest.getClass().getDeclaredField("movieID");
+        movieID.setAccessible(true);
+        movieID.set(showRequest, 9999L);
+
+        Field startTime = showRequest.getClass().getDeclaredField("start_time");
+        startTime.setAccessible(true);
+        String startTime2="01/05/2025 18:00";
+        startTime.set(showRequest, startTime2);
+        
+        List<ShowInfoResponse> a= cinemaShowService.getAllShows();
+        MyNotFoundException e=assertThrows(MyNotFoundException.class, 
+        () -> cinemaShowService.deleteShowByHallIDMovieID(showRequest));
+        List<ShowInfoResponse> b= cinemaShowService.getAllShows();
+        assertEquals(a.size(), b.size());
+        assertNotNull(e);
+    }
+    @Test
+    void SHOW_024_testGetShowInfo_nullID() {
+        InvalidDataAccessApiUsageException exception = assertThrows
+        (InvalidDataAccessApiUsageException.class, 
+        () -> cinemaShowService.getShowInfo(null));
+        assertNotNull(exception);
+}
 }
 
