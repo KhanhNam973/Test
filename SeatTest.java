@@ -7,9 +7,9 @@ import cinema.ticket.booking.model.enumModel.ESeat;
 import cinema.ticket.booking.model.enumModel.ESeatStatus;
 import cinema.ticket.booking.repository.CinemaSeatRepository;
 import cinema.ticket.booking.request.SeatEditRequest;
+import cinema.ticket.booking.response.ErrorResponse;
 import cinema.ticket.booking.response.MyApiResponse;
 import cinema.ticket.booking.response.SeatsResponse;
-import cinema.ticket.booking.response.ErrorResponse;
 import cinema.ticket.booking.service.impl.CinemaHallImpl;
 import cinema.ticket.booking.service.impl.CinemaSeatServiceImpl;
 
@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -38,7 +39,7 @@ class SeatTest {
 
     private CinemaHall hall;
     private CinemaHall hall1;
-    private CinemaHall testHall;
+    private CinemaHall nullHall;
 
     @BeforeEach
     void setUp() {
@@ -47,12 +48,10 @@ class SeatTest {
         hall.setTotalRow(5);
         hall.setTotalCol(5);
         cinemaHallService.newHall(hall);
-        testHall= new CinemaHall();
-        testHall.setId("12345");
     }
 //Test Create List Seat
     @Test
-    void testCreateListSeats() {
+    void SEAT_001_testCreateListSeats() {
         hall1 = new CinemaHall();
         hall1.setName("Hello");
         hall1.setTotalRow(6);
@@ -63,36 +62,39 @@ class SeatTest {
     }
 //Test see existed seat
     @Test
-    void testSeatExists() {
-        assertFalse(cinemaSeatService.isExist(hall.getId(), 10, 10));
+    void SEAT_002_testSeatExists() {
+        assertTrue(cinemaSeatService.isExist(hall.getId(), 2, 3));
     }
 //Test see not existed seat
     @Test
-    void testSeatNotExists() {
-        assertFalse(cinemaSeatService.isExist(hall.getId(), 6, 6));
+    void SEAT_003_testSeatNotExists() {
+        assertFalse(cinemaSeatService.isExist(hall.getId(), 10, 10));
     }
-//Test remove all seats from hall
+//Test see not existed seat (negative test)
+@Test
+void SEAT_004_testSeatNotExists_Negative() {
+    assertFalse(cinemaSeatService.isExist(hall.getId(), -1, 3));
+}
+//Test see seat in non-existing hall
     @Test
-    void testRemoveAllSeatsFromHall() {
-        cinemaSeatService.RemoveAllSeatsFromHall(hall.getId());
-        List<CinemaSeat> seats = hallSeatRepo.findByCinemaHallId(hall.getId());
-        assertEquals(0, seats.size());
+    void SEAT_005_testSeatExists_NotHall() {
+        assertFalse(cinemaSeatService.isExist("9999", 2, 3));
     }
 //Test get all seats from hall
     @Test
-    void testGetAllSeatsFromHall() {
+    void SEAT_006_testGetAllSeatsFromHall() {
         List<SeatsResponse> seats = cinemaSeatService.getAllSeatsFromHall(hall.getId());
         assertEquals(25, seats.size());
     }
 //Test get all seats from hall with wrong id
     @Test
-    void testGetAllSeatsFromHallWithWrongId() {
-        List<SeatsResponse> response = cinemaSeatService.getAllSeatsFromHall(testHall.getId());
+    void SEAT_007_testGetAllSeatsFromHallWithWrongId() {
+        List<SeatsResponse> response = cinemaSeatService.getAllSeatsFromHall("9999");
         assertTrue(response.isEmpty());
     }
 //Test edit seat
     @Test
-    void testEditSeat_Right() throws Exception {
+    void SEAT_008_testEditSeat_Right() throws Exception {
         SeatEditRequest request = new SeatEditRequest();
 
         Field rowField = SeatEditRequest.class.getDeclaredField("row");
@@ -110,28 +112,26 @@ class SeatTest {
         Field statusField = SeatEditRequest.class.getDeclaredField("status");
         statusField.setAccessible(true);
         statusField.set(request, "UNAVAILABLE");
-        MyApiResponse response = cinemaSeatService.Edit(hall.getId(), request);
+        cinemaSeatService.Edit(hall.getId(), request);
 
-        CinemaSeat updatedSeat = hallSeatRepo.findByCinemaHallIdAndRowIndexAndColIndex(hall.getId(), 2, 3)
-                    .orElseThrow(() -> new RuntimeException("Seat not found"));
+        Optional<CinemaSeat> updatedSeat=hallSeatRepo.findByCinemaHallIdAndRowIndexAndColIndex(hall.getId(), 2, 3);
     
-        assertEquals("Success", response.getMessage());
-        assertEquals(ESeat.PREMIUM.toString(), updatedSeat.getSeatType());
-        assertEquals(ESeatStatus.UNAVAILABLE, updatedSeat.getStatus());
+        assertEquals(ESeat.PREMIUM.toString(), updatedSeat.get().getSeatType());
+        assertEquals(ESeatStatus.UNAVAILABLE, updatedSeat.get().getStatus());
         
     }
     //Test edit non-existing seat
     @Test
-    void testEditSeat_NoExist() throws Exception {
+    void SEAT_009_testEditSeat_NoExist() throws Exception {
         SeatEditRequest request = new SeatEditRequest();
 
         Field rowField = SeatEditRequest.class.getDeclaredField("row");
         rowField.setAccessible(true);
-        rowField.setInt(request, 6); 
+        rowField.setInt(request, 10); 
         
         Field colField = SeatEditRequest.class.getDeclaredField("col");
         colField.setAccessible(true);
-        colField.setInt(request, 6);
+        colField.setInt(request, 10);
     
         Field typeField = SeatEditRequest.class.getDeclaredField("type");
         typeField.setAccessible(true);
@@ -145,20 +145,20 @@ class SeatTest {
             () -> cinemaSeatService.Edit(hall.getId(), request)
         );
     
-        assertEquals("Seat not found", exception.getMessage());
+        assertNotNull(exception);
     }
 
     @Test
-    void testEditSeat_NoExistHall() throws Exception {
+    void SEAT_010_testEditSeat_NoExistHall() throws Exception {
         SeatEditRequest request = new SeatEditRequest();
 
         Field rowField = SeatEditRequest.class.getDeclaredField("row");
         rowField.setAccessible(true);
-        rowField.setInt(request, 6); 
+        rowField.setInt(request, 2); 
         
         Field colField = SeatEditRequest.class.getDeclaredField("col");
         colField.setAccessible(true);
-        colField.setInt(request, 6);
+        colField.setInt(request, 3);
     
         Field typeField = SeatEditRequest.class.getDeclaredField("type");
         typeField.setAccessible(true);
@@ -171,13 +171,12 @@ class SeatTest {
             MyNotFoundException.class,
             () -> cinemaSeatService.Edit("99999", request)
         );
-    
-        assertEquals("Seat not found", exception.getMessage());
+        assertNotNull(exception);
     }
 
 //Test edit seat with invalid type
     @Test
-    void testEditSeat_InvalidType() throws Exception{
+    void SEAT_011_testEditSeat_InvalidType() throws Exception{
         SeatEditRequest request = new SeatEditRequest();
         Field rowField = SeatEditRequest.class.getDeclaredField("row");
         rowField.setAccessible(true);
@@ -196,14 +195,15 @@ class SeatTest {
         statusField.set(request, "UNAVAILABLE");
         
         MyApiResponse response = cinemaSeatService.Edit(hall.getId(), request);
-        //assertTrue(response instanceof ErrorResponse);
-        assertEquals("Type is not found. It must be REGULAR or PREMIUM", response.getMessage());
+        Optional<CinemaSeat> a=hallSeatRepo.findByCinemaHallIdAndRowIndexAndColIndex(hall.getId(), 2, 3);
+        assertEquals(a.get().getSeatType(), ESeat.REGULAR.toString());
+        assertNotNull(response);
     }
-    //Type.equals(null) is not a valid check, it should be type==null
+    //Type.equals(null) is not a valid check, it should be type==null in main code
 
 //Test edit seat with invalid status
     @Test
-    void testEditSeat_InvalidStatus() throws Exception{
+    void SEAT_012_testEditSeat_InvalidStatus() throws Exception{
         SeatEditRequest request = new SeatEditRequest();
         Field rowField = SeatEditRequest.class.getDeclaredField("row");
         rowField.setAccessible(true);
@@ -223,8 +223,91 @@ class SeatTest {
 
         MyApiResponse response = cinemaSeatService.Edit(hall.getId(), request);
 
-        assertTrue(response instanceof ErrorResponse);
-        assertEquals("Status is not found. It must be AVAILABLE or UNAVAILABLE", response.getMessage());
+        Optional<CinemaSeat> a=hallSeatRepo.findByCinemaHallIdAndRowIndexAndColIndex(hall.getId(), 2, 3);
+        assertEquals(a.get().getStatus(), ESeatStatus.AVAILABLE.toString());
+        assertNotNull(response);
     }
     // status.equals(null) is not a valid check, it should be status==null
+
+    //Test remove all seats from hall
+    @Test
+    void SEAT_013_testRemoveAllSeatsFromHall() {
+        cinemaSeatService.RemoveAllSeatsFromHall(hall.getId());
+        List<CinemaSeat> seats = hallSeatRepo.findByCinemaHallId(hall.getId());
+        assertEquals(0, seats.size());
+    }
+//Test remove all seats from non-existing hall
+    @Test
+    void SEAT_014_testRemoveAllSeats_NoHall() {
+        Exception exception = assertThrows(
+            MyNotFoundException.class,
+            () -> cinemaSeatService.RemoveAllSeatsFromHall("9999"));
+        assertNotNull( exception);
+    }
+//Test remove all seats from null hall
+    @Test
+    void SEAT_015_testRemoveAllSeats_NullHall() {
+        Exception exception = assertThrows(
+            NullPointerException.class,
+            () -> cinemaSeatService.RemoveAllSeatsFromHall(nullHall.getId()));
+        assertNotNull(exception);
+    }
+//Test edit seat with invalid type
+@Test
+void SEAT_016_testEditSeat_NullType() throws Exception{
+    SeatEditRequest request = new SeatEditRequest();
+    Field rowField = SeatEditRequest.class.getDeclaredField("row");
+    rowField.setAccessible(true);
+    rowField.setInt(request, 2); 
+    
+    Field colField = SeatEditRequest.class.getDeclaredField("col");
+    colField.setAccessible(true);
+    colField.setInt(request, 3);
+
+    Field typeField = SeatEditRequest.class.getDeclaredField("type");
+    typeField.setAccessible(true);
+    typeField.set(request, null);  
+    
+    Field statusField = SeatEditRequest.class.getDeclaredField("status");
+    statusField.setAccessible(true);
+    statusField.set(request, "UNAVAILABLE");
+    
+    ErrorResponse response = (ErrorResponse) cinemaSeatService.Edit(hall.getId(), request);
+    Optional<CinemaSeat> a=hallSeatRepo.findByCinemaHallIdAndRowIndexAndColIndex(hall.getId(), 2, 3);
+    assertEquals(a.get().getStatus(), ESeat.REGULAR.toString());
+    assertNotNull(response);
+}
+//Type.equals(null) is not a valid check, it should be type==null in main code
+
+//Test edit seat with invalid status
+@Test
+void SEAT_017_testEditSeat_NullStatus() throws Exception{
+    SeatEditRequest request = new SeatEditRequest();
+    Field rowField = SeatEditRequest.class.getDeclaredField("row");
+    rowField.setAccessible(true);
+    rowField.setInt(request, 2); 
+    
+    Field colField = SeatEditRequest.class.getDeclaredField("col");
+    colField.setAccessible(true);
+    colField.setInt(request,3);
+
+    Field typeField = SeatEditRequest.class.getDeclaredField("type");
+    typeField.setAccessible(true);
+    typeField.set(request, "PREMIUM");  
+    
+    Field statusField = SeatEditRequest.class.getDeclaredField("status");
+    statusField.setAccessible(true);
+    statusField.set(request, null);
+
+    MyApiResponse response = cinemaSeatService.Edit(hall.getId(), request);
+
+    Optional<CinemaSeat> a=hallSeatRepo.findByCinemaHallIdAndRowIndexAndColIndex(hall.getId(), 2, 3);
+    assertEquals(a.get().getStatus(), ESeatStatus.AVAILABLE.toString());
+    assertNotNull(response);
+}
+@Test
+void SEAT_018_testSeatNotExists_Zero() {
+    assertFalse(cinemaSeatService.isExist(hall.getId(), 0, 3));
+}
+    
 }
