@@ -1232,7 +1232,7 @@ public class BookingServiceTest {
     }
 
     @Test
-    void BOOK_049_blacklistUsers_test4() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+    void BOOK_050_blacklistUsers_test4() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
 
         String user_id = "fa19dcbd-241797c7-b83f36c5";
         Account user = userRepository.findById(user_id).get();
