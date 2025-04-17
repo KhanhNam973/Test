@@ -4,6 +4,7 @@ import cinema.ticket.booking.repository.CinemaHallRepository;
 import cinema.ticket.booking.request.CinemaHallRequest;
 import cinema.ticket.booking.response.MyApiResponse;
 import cinema.ticket.booking.response.ErrorResponse;
+import cinema.ticket.booking.exception.MyBadRequestException;
 import cinema.ticket.booking.exception.MyNotFoundException;
 import cinema.ticket.booking.service.impl.CinemaHallImpl;
 
@@ -344,11 +345,13 @@ void HALL_006_testInvalid_HallRowCol() {
 //Test hall non-existence by name
     @Test
     void HALL_018_testNotExistByName() {
-        assertFalse(cinemaHallService.isExistByName("Non-Existent Hall"));
+        Exception e= assertThrows(MyBadRequestException.class,()-> cinemaHallService.isExistByName("Non-Existent Hall"));
+        assertEquals(e.getMessage(), "Hall is not found");
     }
     @Test
     void HALL_019_testNUllByName() {
-        assertFalse(cinemaHallService.isExistByName(null));
+        Exception e= assertThrows(MyBadRequestException.class,()-> cinemaHallService.isExistByName("Non-Existent Hall"));
+        assertEquals(e.getMessage(), "Hall is not found");
     }
 
 //Test get all halls
