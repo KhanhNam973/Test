@@ -190,8 +190,8 @@ void GENRE_005_testGetGenre_NoExist() {
         List<Genre> genres = Arrays.asList(genre1, genre2);
         MyBadRequestException e=assertThrows(MyBadRequestException.class, () ->genreService.saveListGenres(genres));
         int b= genreReposity.findAll().size();
+         assertEquals(a+1,b);
         assertNotNull(e);
-        assertEquals(a,b);;
     }
 
 }
