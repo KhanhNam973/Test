@@ -274,7 +274,7 @@ void SEAT_016_testEditSeat_NullType() throws Exception{
     
     ErrorResponse response = (ErrorResponse) cinemaSeatService.Edit(hall.getId(), request);
     Optional<CinemaSeat> a=hallSeatRepo.findByCinemaHallIdAndRowIndexAndColIndex(hall.getId(), 2, 3);
-    assertEquals(a.get().getStatus(), ESeat.REGULAR.toString());
+    assertEquals(a.get().getSeatType(), ESeat.REGULAR.toString());
     assertNotNull(response);
 }
 //Type.equals(null) is not a valid check, it should be type==null in main code
