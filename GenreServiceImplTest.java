@@ -160,10 +160,11 @@ void GENRE_005_testGetGenre_NoExist() {
         int a= genreReposity.findAll().size();
         Genre genre = new Genre();
         genre.setGenre(null);
-        // MyBadRequestException e=assertThrows(
-        //     MyBadRequestException.class,
-        // () -> genreService.saveGenre(genre));
-        genreService.saveGenre(genre);
+        //MyBadRequestException e=
+        assertThrows(
+            MyBadRequestException.class,
+        () -> genreService.saveGenre(genre));
+        //genreService.saveGenre(genre);
         int b= genreReposity.findAll().size();
         assertEquals(a, b);
         //assertNotNull(e);
@@ -189,10 +190,11 @@ void GENRE_005_testGetGenre_NoExist() {
         genre2.setGenre("Romantic");
         
         List<Genre> genres = Arrays.asList(genre1, genre2);
-        // MyBadRequestException e=assertThrows(
-        //     MyBadRequestException.class, () 
-        //     ->genreService.saveListGenres(genres));
-        genreService.saveListGenres(genres);
+        //MyBadRequestException e=
+        assertThrows(
+            MyBadRequestException.class, () 
+            ->genreService.saveListGenres(genres));
+        //genreService.saveListGenres(genres);
         int b= genreReposity.findAll().size();
         assertEquals(a+1,b);
         //assertNotNull(e);
