@@ -296,18 +296,18 @@ void MOVIE_015_testSaveMovieList_NullTitle() {
 //Test get not exited movie by null name
 @Test
 void MOVIE_016_testGetMatchingName_NullName() {
-    List<MovieInfoResponse> movies = movieService.getMatchingName(null,0,32);
-    assertTrue(movies.isEmpty());
-    // MyBadRequestException e = assertThrows(MyBadRequestException.class, () -> movieService.getMatchingName(null,0,32)); 
-    // assertEquals(e.getMessage(), "Movie name cannot be null or empty.");
+    // List<MovieInfoResponse> movies = movieService.getMatchingName(null,0,32);
+    // assertTrue(movies.isEmpty());
+    MyBadRequestException e = assertThrows(MyBadRequestException.class, () -> movieService.getMatchingName(null,0,32)); 
+    assertEquals(e.getMessage(), "Movie name cannot be null or empty.");
 }
 //Get movie by null genre
 @Test
 void MOVIE_017_testGetMatchingGenre_Null() {
-    Object[] movies = movieService.getMatchingGenre(null,0,32);
-    assertTrue(movies.length==0);
-    // MyBadRequestException e = assertThrows(MyBadRequestException.class, () -> movieService.getMatchingGenre(null,0,32)); 
-    //assertNotNull(e.getMessage(),"Movie genre cannot be null or empty.");
+    // Object[] movies = movieService.getMatchingGenre(null,0,32);
+    // assertTrue(movies.length==0);
+    MyBadRequestException e = assertThrows(MyBadRequestException.class, () -> movieService.getMatchingGenre(null,0,32)); 
+    assertNotNull(e.getMessage(),"Movie genre cannot be null or empty.");
 }
 //Get Movies By null ID
 @Test
