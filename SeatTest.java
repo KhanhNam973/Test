@@ -123,6 +123,7 @@ void SEAT_004_testSeatNotExists_Negative() {
     //Test edit non-existing seat
     @Test
     void SEAT_009_testEditSeat_NoExist() throws Exception {
+        int a=hallSeatRepo.findAll().size();
         SeatEditRequest request = new SeatEditRequest();
 
         Field rowField = SeatEditRequest.class.getDeclaredField("row");
@@ -144,12 +145,14 @@ void SEAT_004_testSeatNotExists_Negative() {
             MyNotFoundException.class,
             () -> cinemaSeatService.Edit(hall.getId(), request)
         );
-    
-        assertNotNull(exception);
+        int b=hallSeatRepo.findAll().size();
+        assertEquals(a, b);
+        assertEquals(exception.getMessage(),"Seat not found");
     }
 
     @Test
     void SEAT_010_testEditSeat_NoExistHall() throws Exception {
+        int a=hallSeatRepo.findAll().size();
         SeatEditRequest request = new SeatEditRequest();
 
         Field rowField = SeatEditRequest.class.getDeclaredField("row");
@@ -171,7 +174,9 @@ void SEAT_004_testSeatNotExists_Negative() {
             MyNotFoundException.class,
             () -> cinemaSeatService.Edit("99999", request)
         );
-        assertNotNull(exception);
+        int b=hallSeatRepo.findAll().size();
+        assertEquals(a, b);
+        assertEquals(exception.getMessage(),"Seat not found");
     }
 
 //Test edit seat with invalid type
@@ -239,17 +244,23 @@ void SEAT_004_testSeatNotExists_Negative() {
 //Test remove all seats from non-existing hall
     @Test
     void SEAT_014_testRemoveAllSeats_NoHall() {
+        int a=hallSeatRepo.findAll().size();
         Exception exception = assertThrows(
             MyNotFoundException.class,
             () -> cinemaSeatService.RemoveAllSeatsFromHall("9999"));
+        int b=hallSeatRepo.findAll().size();
+        assertEquals(a, b);
         assertNotNull( exception);
     }
 //Test remove all seats from null hall
     @Test
     void SEAT_015_testRemoveAllSeats_NullHall() {
+        int a=hallSeatRepo.findAll().size();
         Exception exception = assertThrows(
             NullPointerException.class,
             () -> cinemaSeatService.RemoveAllSeatsFromHall(nullHall.getId()));
+        int b=hallSeatRepo.findAll().size();
+        assertEquals(a, b);
         assertNotNull(exception);
     }
 //Test edit seat with invalid type
