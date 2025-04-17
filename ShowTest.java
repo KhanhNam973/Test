@@ -107,8 +107,8 @@ class ShowTest {
         MyBadRequestException e= assertThrows(MyBadRequestException.class, 
         () ->   cinemaShowService.addShow(showRequest));
         int b=showRepository.findAll().size();
-        assertNotNull(e);
         assertEquals(a, b);
+        assertEquals(e.getMessage(),"This show existed");
     }
 
 //Test add show with invalid date
@@ -127,9 +127,9 @@ class ShowTest {
 
         MyBadRequestException exception=assertThrows(MyBadRequestException.class, 
         () -> cinemaShowService.addShow(showRequest));
-        assertNotNull(exception);
         int b=showRepository.findAll().size();
         assertEquals(a, b);
+        assertEquals(exception.getMessage(),"Invalid date format, it must be dd/MM/yyyy HH:mm");
     }
     //Test add show with null cinema
     @Test
