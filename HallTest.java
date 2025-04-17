@@ -66,9 +66,9 @@ void HALL_003_testNewHall_NullName() {
     hall.setName(null);
     hall.setTotalRow(10);
     hall.setTotalCol(12);
+    NullPointerException f=assertThrows(NullPointerException.class, () -> cinemaHallService.newHall(hall));
     int b=hallR.findAll().size();
     assertEquals(a,b);
-    NullPointerException f=assertThrows(NullPointerException.class, () -> cinemaHallService.newHall(hall));
     assertNotNull(f.getMessage());
 }
 
