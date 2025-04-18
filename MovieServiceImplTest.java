@@ -181,6 +181,7 @@ void MOVIE_004_testSaveMovie_NullName() {
     void MOVIE_011_testGetMatchingGenre() {
         Object[] movies = movieService.getMatchingGenre("Drama",0,32);
         assertTrue(movies.length>0);
+        assertEquals(4, movies.length);
     }
 // Test get movie by not exited genre
     @Test
