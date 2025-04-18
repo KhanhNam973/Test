@@ -54,6 +54,7 @@ class GenreServiceImplTest {
         genreService.saveGenre(genre);
         List<Genre> genres = genreService.getGenres();
         assertFalse(genres.isEmpty());
+        assertEquals(17, genres.size());
     }
 
 //Get a genre by ID
