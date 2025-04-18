@@ -147,7 +147,7 @@ void MOVIE_004_testSaveMovie_NullName() {
         MyNotFoundException ex = assertThrows(
             MyNotFoundException.class,
              () -> movieService.getMovie(999L));
-        assertNotNull(ex);
+        assertEquals(ex.getMessage(),"Movie not found");
 
     }
 //Delete Movie with existed ID
@@ -162,8 +162,8 @@ void MOVIE_004_testSaveMovie_NullName() {
         List<MovieInfoResponse> movies = movieService.getMovies(0, 999);
         MyNotFoundException ex = assertThrows(MyNotFoundException.class, () -> movieService.deleteMovie(999L));
         List<MovieInfoResponse> movies2 = movieService.getMovies(0, 999);
-        assertNotNull(ex);
         assertEquals(movies.size(), movies2.size());
+        assertEquals(ex.getMessage(),"Movie not found");
     }
 
 //Test get exited movie by title
