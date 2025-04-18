@@ -117,6 +117,7 @@ void MOVIE_003_testSaveMovie_Duplicate() {
 //Save Movie with null name
 @Test
 void MOVIE_004_testSaveMovie_NullName() {
+    int a=movieRepo.findAll().size();
     Movie movie = new Movie();
     movie.settitle(null);
     movie.setDescription("A mind-bending thriller.");
@@ -127,7 +128,9 @@ void MOVIE_004_testSaveMovie_NullName() {
     movie.setGenres(Arrays.asList(action));
 
     MyBadRequestException savedMovie = assertThrows(MyBadRequestException.class, () -> movieService.saveMovie(movie));
-    assertNotNull(savedMovie);
+    int b=movieRepo.findAll().size();
+    assertEquals(a, b);
+    assertNotNull(savedMovie.getMessage(),"Movie name can not be null");
 }   
 
 
