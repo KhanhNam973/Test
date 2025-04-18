@@ -210,7 +210,7 @@ class ShowTest {
     void SHOW_008_testGetAllShows() {
         List<ShowInfoResponse> allShows = cinemaShowService.getAllShows();
         assertNotNull(allShows);
-        assertTrue(allShows.size() > 0);
+        assertEquals(allShows.size(),32);
     }
 //Update show 
     @Test
@@ -510,4 +510,3 @@ void SHOW_015_testUpdateShow_InvalidMovieID() throws Exception {
         assertNotNull(exception);
 }
 }
-
