@@ -359,6 +359,7 @@ void HALL_006_testInvalid_HallRowCol() {
     void HALL_020_testGetAllHalls() {
         List<CinemaHall> halls = cinemaHallService.getAllHalls();
         assertFalse(halls.isEmpty());
+        assertEquals(4, halls.size());
     }
 
 //Test get hall by ID
