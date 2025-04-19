@@ -31,6 +31,7 @@ public class CommentTest {
     @Autowired
     private CommentRepository commentRepo;
 
+
     // test with valid data
     @Test
     public void COM_001_testAddComment_Success() throws Exception {
@@ -39,7 +40,7 @@ public class CommentTest {
            
         Field movieID=AddCommentRequest.class.getDeclaredField("movie_id");
         movieID.setAccessible(true);
-        movieID.set(request,2L);
+        movieID.set(request,4L);
         
         Field commentField=AddCommentRequest.class.getDeclaredField("comment");
         commentField.setAccessible(true);
@@ -49,7 +50,7 @@ public class CommentTest {
         ratingField.setAccessible(true);
         ratingField.setInt(request, 5);
 
-        CommentResponse c=commentService.addComment("avart", request);
+        commentService.addComment("avart", request);
         int b=commentRepo.findAll().size();
         assertEquals(a, b);        
     }
@@ -116,7 +117,7 @@ public class CommentTest {
         
         Field movieID=AddCommentRequest.class.getDeclaredField("movie_id");
         movieID.setAccessible(true);
-        movieID.set(request,3L);
+        movieID.set(request,6L);
         
         Field commentField=AddCommentRequest.class.getDeclaredField("comment");
         commentField.setAccessible(true);
@@ -173,7 +174,7 @@ public class CommentTest {
 
         Field movieID=AddCommentRequest.class.getDeclaredField("movie_id");
         movieID.setAccessible(true);
-        movieID.set(request,2L);
+        movieID.set(request,4L);
         
         Field commentField=AddCommentRequest.class.getDeclaredField("comment");
         commentField.setAccessible(true);
@@ -224,7 +225,7 @@ public class CommentTest {
         ratingField1.setInt(request1, 5);
 
         List<AddCommentRequest> requests = Arrays.asList(request, request1);
-        CommentResponse c=commentService.addListComments("avart", requests);
+        commentService.addListComments("avart", requests);
         int b=commentRepo.findAllByUsername("avart").size();
         assertEquals(a+2,b);
     }
@@ -241,7 +242,7 @@ public class CommentTest {
         ratingField.setAccessible(true);   
         ratingField.setInt(request, 5);
 
-        CommentResponse c=commentService.editComment("avart", "fd564807-b6262c59-92d7e4c2", request);
+        commentService.editComment("avart", "fd564807-b6262c59-92d7e4c2", request);
         String comment = commentRepo.findById("fd564807-b6262c59-92d7e4c2").get().getComment();
         assertEquals(comment, "test comment");
     }
@@ -281,7 +282,7 @@ public class CommentTest {
 
         MyBadRequestException exception = assertThrows(
             MyBadRequestException.class, () -> {
-            commentService.editComment("haha", "fd564807-b6262c59-92d7e4c2", request); // user not in database
+            commentService.editComment("user_1", "fd564807-b6262c59-92d7e4c2", request); // user not in database
         });
         String comment = commentRepo.findById("fd564807-b6262c59-92d7e4c2").get().getComment();
         assertNotEquals(comment, "test comment");
@@ -314,7 +315,7 @@ public class CommentTest {
     @Test   
     public void COM_012_testDeleteComment_Success() throws Exception {
         int a=commentRepo.findAll().size();
-        MyApiResponse c=commentService.deleteCommentById("fd564807-b6262c59-92d7e4c2");
+        commentService.deleteCommentById("fd564807-b6262c59-92d7e4c2");
         int b=commentRepo.findAll().size();
         assertEquals(a-1,b);
     }
@@ -336,7 +337,7 @@ public class CommentTest {
     @Test   
     public void COM_014_testDeleteCommentByUsername_Success() throws Exception {
         int a=commentRepo.findAll().size();
-        MyApiResponse c=commentService.deleteCommentByUsername("avart", "fd564807-b6262c59-92d7e4c2");
+        commentService.deleteCommentByUsername("avart", "fd564807-b6262c59-92d7e4c2");
         int b=commentRepo.findAll().size();
         assertEquals(a-1,b);
     }
@@ -347,7 +348,7 @@ public class CommentTest {
         int a=commentRepo.findAll().size();
         MyBadRequestException exception = assertThrows(
             MyBadRequestException.class, () -> {
-            commentService.deleteCommentByUsername("haha", "fd564807-b6262c59-92d7e4c2"); // user not in database
+            commentService.deleteCommentByUsername("user_1", "fd564807-b6262c59-92d7e4c2"); // user not in database
         });
         int b=commentRepo.findAll().size();
         assertEquals(a,b);
@@ -379,7 +380,7 @@ public class CommentTest {
     public void COM_018_testGetOne_invalidusername() throws Exception {
         MyBadRequestException exception = assertThrows(
             MyBadRequestException.class, () -> {
-            commentService.getOne("haha", "fd564807-b6262c59-92d7e4c2"); // user not in database
+            commentService.getOne("user_1", "fd564807-b6262c59-92d7e4c2"); // user not in database
         });
         assertEquals(exception.getMessage(), "This comment is not belonged to you");
     }
@@ -419,7 +420,7 @@ public class CommentTest {
     @Test
     public void COM_023_testGetAllFromUsername_Success() throws Exception {
         List<CommentResponse> c=commentService.getAllCommentsFromusername("avart");
-        assertEquals(c.size(), 2);
+        assertEquals(c.size(), 1);
     }
   
     // test get all comment from username with invalid username
