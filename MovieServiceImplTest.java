@@ -96,6 +96,7 @@ public class MovieServiceImplTest {
         Movie savedMovie = movieService.saveMovie(movie);
         assertNotNull(savedMovie.getId());
         assertEquals("Inception", savedMovie.getTitle());
+        assertEquals("USA", savedMovie.getCountry());
     }
 //Save Duplicate Movie
 @Test
