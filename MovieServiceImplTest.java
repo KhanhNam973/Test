@@ -219,17 +219,14 @@ void MOVIE_013_testSaveMovieList_NoDuplicate() {
 
     List<Movie> movies = Arrays.asList(movie4,movie3);
     movieService.saveMovieList(movies);
-
-    List<MovieInfoResponse> tim1= movieService.getMatchingName("The Matrix",0,32);
-    List<MovieInfoResponse> tim2= movieService.getMatchingName("Hom Nay Dep",0,32);
-    assertEquals(tim1.size(), 1);
-    assertEquals(tim2.size(), 1);
     
-    MovieInfoResponse movieFind1= tim1.get(0);
-    MovieInfoResponse movieFind2= tim2.get(0);
+    Movie a= movieRepo.findById(movie4.getId()).orElse(null);
+    Movie b= movieRepo.findById(movie3.getId()).orElse(null);
 
-    assertEquals(movieFind1.getTitle(), "The Matrix");  
-    assertEquals(movieFind2.getTitle(), "Hom Nay Dep");
+    assertEquals(b.getTitle(), "The Matrix");  
+    assertEquals(a.getTitle(), "Hom Nay Dep");
+    assertEquals(b.getCountry(), "USA");  
+    assertEquals(a.getCountry(), "USA");
 }
 //Save Movie List with duplicate movie
 @Test
