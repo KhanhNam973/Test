@@ -3,30 +3,22 @@ package cinema.ticket.booking;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import cinema.ticket.booking.exception.MyBadRequestException;
+import cinema.ticket.booking.exception.MyNotFoundException;
 import cinema.ticket.booking.model.Account;
 import cinema.ticket.booking.model.Role;
 import cinema.ticket.booking.model.enumModel.ERole;
@@ -45,24 +37,14 @@ class UserServiceTest {
     @Autowired
     private UserRepository userRepository;
 
-    @Mock
-    private UserRepository userRepositoryMock;
-
     @Autowired
     private RoleRepository roleRepository;
-
-    @Mock
-    private RoleRepository roleRepositoryMock;
 
     @Autowired
     private UserServiceImpl userServiceImpl;
 
-    @InjectMocks
-    private UserServiceImpl userServiceImplMock;
-
-    //Test save user
     @Test
-    void test1_saveUser_test2() {
+    void USER_001_saveUser_test01() {
 
         String id = "bruh";
         String username = "testuser";
@@ -90,562 +72,656 @@ class UserServiceTest {
 
     }
 
-    //Test save user update người dùng có sẵn
     @Test
-    void test39_saveUser_test2() {
+    void USER_002_saveUser_test02() {
+        String user_id = "fa19dcbd-241797c7-b83f36c5";
+        String username = "brih";
 
-        String username = "user_1";
-        Account user = userRepository.getByUsername(username).get();
-        String accountName = user.getFullname();
-        user.setFullname("brih");
+        Account account = userRepository.findById(user_id).get();
+        account.setUsername(username);
 
-        Account updatedUser = userServiceImpl.saveUser(user);
-        Account updatedUserInDB = userRepository.getByUsername(username).get();
+        userServiceImpl.saveUser(account);
+        Account savedAccount = userRepository.findById(user_id).get();
 
-        assertNotNull(updatedUser);
-        assertNotEquals(accountName, updatedUserInDB.getFullname());
+        assertNotNull(savedAccount);
+        assertEquals(user_id, savedAccount.getId());
+        assertEquals(username, savedAccount.getUsername());
 
     }
 
-    //Test lấy user có trong db
     @Test
-    void test2_getUserByUsername_test1() {
+    void USER_003_saveRole_test01() {
+        long role_id = 4;
 
-        String username = "super_admin.1234";
+        Role role = userServiceImpl.saveRole(new Role(role_id, ERole.ROLE_USER));
+        Role savedRole = roleRepository.findById(role_id).orElse(null);
 
-        AccountSummaryResponse gotAccount = userServiceImpl.getUserByUsername(username);
-        AccountSummaryResponse expectedAccount = new AccountSummaryResponse(userRepository.getByUsername(username).get());
+        assertNotNull(savedRole);
+        assertEquals(role_id, savedRole.getId());
+        assertEquals(ERole.ROLE_USER.name(), savedRole.getRole());
+    }
 
-        assertNotNull(gotAccount);
-        assertEquals(expectedAccount.getUsername(), gotAccount.getUsername());
-        assertEquals(expectedAccount.getId(), gotAccount.getId());
+    @Test
+    void USER_004_saveRole_test02() {
+        long role_id = 1;
+
+        Role role = roleRepository.findById(role_id).get();
+        role.setRole(ERole.ROLE_USER);
+
+        userServiceImpl.saveRole(role);
+        Role savedRole = roleRepository.findById(role_id).get();
+
+        assertNotNull(savedRole);
+        assertEquals(role_id, savedRole.getId());
+        assertEquals(ERole.ROLE_USER.name(), savedRole.getRole());
 
     }
 
-    //Test lấy user không có trong db
     @Test
-    void test3_getUserByUsername_test2() {
+    void USER_005_getUserByUsername_test01() {
+        String username = "";
 
-        String username = "user_3";
-
-        assertThrows(
-                UsernameNotFoundException.class,
+        Exception exception = assertThrows(MyBadRequestException.class,
                 () -> userServiceImpl.getUserByUsername(username)
         );
 
+        String expectedMessage = "Username must not be empty";
+        assertEquals(expectedMessage, exception.getMessage());
     }
 
-    //Test add role admin to user
     @Test
-    void test4_addRoleToUser_test1() {
+    void USER_006_getUserByUsername_test02() {
+        String username = "abc!";
 
-        String testUser = "user_1";
+        Exception exception = assertThrows(MyBadRequestException.class,
+                () -> userServiceImpl.getUserByUsername(username)
+        );
 
-        //Act
-        userServiceImpl.addRoleToUser(testUser, ERole.ROLE_ADMIN);
-        Account user = userRepository.getByUsername(testUser).get();
-
-        //Assert
-        assertFalse(user.getRoles().isEmpty());
-        assertEquals(2, user.getRoles().size());
-
+        String expectedMessage = "Username is invalid. Username must be at least 5 characters long; Password can have lowercase, uppercase, numbers, character . or _";
+        assertEquals(expectedMessage, exception.getMessage());
     }
 
-    //Test add role trùng lặp
     @Test
-    void test40_addRoleToUser_test2() {
+    void USER_007_getUserByUsername_test03() {
+        String username = "user_3";
 
-        String testUser = "user_1";
+        Exception exception = assertThrows(MyNotFoundException.class,
+                () -> userServiceImpl.getUserByUsername(username)
+        );
 
-        //Act
-        userServiceImpl.addRoleToUser(testUser, ERole.ROLE_USER);
-        Account user = userRepository.getByUsername(testUser).get();
-
-        //Assert
-        assertFalse(user.getRoles().isEmpty());
-        assertEquals(1, user.getRoles().size());
+        String expectedMessage = "User not found";
+        assertEquals(expectedMessage, exception.getMessage());
     }
 
-    //Test get all users
     @Test
-    void test5_getUsers() {
+    void USER_008_getUserByUsername_test04() {
+        String username = "avart";
 
-        List<Account> accountList = userRepository.findAll();
-        List<AccountSummaryResponse> actualAccountList = userServiceImpl.getUsers();
+        AccountSummaryResponse account = userServiceImpl.getUserByUsername(username);
 
-        assertFalse(actualAccountList.isEmpty());
-        assertEquals(accountList.size(), actualAccountList.size());
+        assertNotNull(account);
+        assertEquals(username, account.getUsername());
 
     }
 
-    //Test loadUserByUsername when using on user authority
     @Test
-    void test6_loadUserByUsername_test1() {
+    void USER_009_addRoleToUser_test01() {
+        String username = "user_3";
 
+        Exception exception = assertThrows(MyNotFoundException.class,
+                () -> userServiceImpl.addRoleToUser(username, ERole.ROLE_USER)
+        );
+
+        String expectedMessage = "User not found";
+        assertEquals(expectedMessage, exception.getMessage());
+
+    }
+
+    @Test
+    void USER_010_addRoleToUser_test02() {
+        String username = "abc!";
+
+        Exception exception = assertThrows(MyBadRequestException.class,
+                () -> userServiceImpl.addRoleToUser(username, ERole.ROLE_USER)
+        );
+
+        String expectedMessage = "Username is invalid. Username must be at least 5 characters long; Password can have lowercase, uppercase, numbers, character . or _";
+        assertEquals(expectedMessage, exception.getMessage());
+    }
+
+    @Test
+    void USER_011_addRoleToUser_test03() {
+        String username = "user_3";
+
+        Exception exception = assertThrows(MyNotFoundException.class,
+                () -> userServiceImpl.addRoleToUser(username, ERole.ROLE_USER)
+        );
+
+        String expectedMessage = "User not found";
+        assertEquals(expectedMessage, exception.getMessage());
+    }
+
+    @Test
+    void USER_012_addRoleToUser_test04() {
+        String user_id = "fa19dcbd-241797c7-bA83f36c5";
         String username = "user_1";
+        ERole role = ERole.ROLE_ADMIN;
 
-        Account user = userRepository.getByUsername(username).get();
-        UserDetails userDetails = userServiceImpl.loadUserByUsername(username);
+        userServiceImpl.addRoleToUser(username, role);
+        Account savedAccount = userRepository.getByUsername(username).get();
 
-        assertNotNull(userDetails);
-        assertEquals(user.getUsername(), userDetails.getUsername());
-        assertEquals(user.getPassword(), userDetails.getPassword());
-        assertEquals(user.getAuthorities().size(), userDetails.getAuthorities().size());
-
-    }
-
-    //Test loadUserByUsername when using on admin authority
-    @Test
-    void test7_loadUserByUsername_test2() {
-
-        String username = "admin.1234";
-
-        Account user = userRepository.getByUsername(username).get();
-        UserDetails userDetails = userServiceImpl.loadUserByUsername(username);
-
-        assertNotNull(userDetails);
-        assertEquals(user.getUsername(), userDetails.getUsername());
-        assertEquals(user.getPassword(), userDetails.getPassword());
-        assertEquals(user.getAuthorities().size(), userDetails.getAuthorities().size());
+        assertEquals(2, savedAccount.getRoles().size());
+        assertTrue(savedAccount.getRoles().stream().anyMatch(r -> r.getRole().equals(role.name())));
+        assertTrue(savedAccount.getRoles().stream().anyMatch(r -> r.getRole().equals(ERole.ROLE_USER.name())));
 
     }
 
-    //Test loadUserByUsername when using on super admin authority
     @Test
-    void test8_loadUserByUsername_test3() {
+    void USER_013_addRoleToUser_test05() {
+        String user_id = "fa19dcbd-241797c7-bA83f36c5";
+        String username = "user_1";
+        ERole role = ERole.ROLE_USER;
 
+        userServiceImpl.addRoleToUser(username, role);
+        Account savedAccount = userRepository.getByUsername(username).get();
+
+        assertEquals(1, savedAccount.getRoles().size());
+        assertTrue(savedAccount.getRoles().stream().anyMatch(r -> r.getRole().equals(role.name())));
+        assertFalse(savedAccount.getRoles().stream().anyMatch(r -> r.getRole().equals(ERole.ROLE_ADMIN.name())));
+        assertFalse(savedAccount.getRoles().stream().anyMatch(r -> r.getRole().equals(ERole.ROLE_SUPER_ADMIN.name())));
+    }
+
+    @Test
+    void USER_014_getUsers() {
+
+        List<AccountSummaryResponse> users = userServiceImpl.getUsers();
+
+        assertNotNull(users);
+        assertFalse(users.isEmpty());
+        assertEquals(5, users.size());
+    }
+
+    @Test
+    void USER_015_loadUserByUsername_test01() {
+        String username = "";
+
+        Exception exception = assertThrows(MyBadRequestException.class,
+                () -> userServiceImpl.loadUserByUsername(username)
+        );
+
+        String expectedMessage = "Username must not be empty";
+        assertEquals(expectedMessage, exception.getMessage());
+    }
+
+    @Test
+    void USER_016_loadUserByUsername_test02() {
+        String username = "abc!";
+
+        Exception exception = assertThrows(MyBadRequestException.class,
+                () -> userServiceImpl.loadUserByUsername(username)
+        );
+
+        String expectedMessage = "Username is invalid. Username must be at least 5 characters long; Password can have lowercase, uppercase, numbers, character . or _";
+        assertEquals(expectedMessage, exception.getMessage());
+    }
+
+    @Test
+    void USER_017_loadUserByUsername_test03() {
+        String username = "user_3";
+
+        Exception exception = assertThrows(MyNotFoundException.class,
+                () -> userServiceImpl.loadUserByUsername(username)
+        );
+
+        String expectedMessage = "User not found";
+        assertEquals(expectedMessage, exception.getMessage());
+    }
+
+    @Test
+    void USER_018_loadUserByUsername_test04() {
         String username = "super_admin.1234";
 
-        Account user = userRepository.getByUsername(username).get();
         UserDetails userDetails = userServiceImpl.loadUserByUsername(username);
 
         assertNotNull(userDetails);
-        assertEquals(user.getUsername(), userDetails.getUsername());
-        assertEquals(user.getPassword(), userDetails.getPassword());
-        assertEquals(user.getAuthorities().size(), userDetails.getAuthorities().size());
-
+        assertEquals(username, userDetails.getUsername());
+        assertEquals(3, userDetails.getAuthorities().size());
     }
 
-    //Username khống chế với regex 5 chữ cái trở lên, có ký tự hoa, thường và số, có dấu . hoặc _
-    //Test username không đúng regex
     @Test
-    void test9_UsernameIsExisted_test1() {
+    void USER_019_usernameIsExisted_test01() {
+        String username = "";
 
-        String username = "abc!";
-        assertThrows(
-                MyBadRequestException.class,
+        Exception exception = assertThrows(MyBadRequestException.class,
                 () -> userServiceImpl.UsernameIsExisted(username)
         );
 
+        String expectedMessage = "Username must not be empty";
+        assertEquals(expectedMessage, exception.getMessage());
     }
 
-    //Test username đúng regex nhưng đã có trong db
     @Test
-    void test10_UsernameIsExisted_test2() {
+    void USER_020_usernameIsExisted_test02() {
+        String username = "abc!";
 
+        Exception exception = assertThrows(MyBadRequestException.class,
+                () -> userServiceImpl.UsernameIsExisted(username)
+        );
+
+        String expectedMessage = """
+                                 Username is unvalid. Username must follow these requirements:\r
+                                  + At least 5 characters long\r
+                                  + No whitespace and special character, except . and _""" //
+                //
+                ;
+        assertEquals(expectedMessage, exception.getMessage());
+    }
+
+    @Test
+    void USER_021_usernameIsExisted_test03() {
+        String username = "user_3";
+
+        Boolean isExisted = userServiceImpl.UsernameIsExisted(username);
+
+        assertNotNull(isExisted);
+        assertFalse(isExisted);
+    }
+
+    @Test
+    void USER_022_usernameIsExisted_test04() {
         String username = "user_1";
 
-        Boolean result = userServiceImpl.UsernameIsExisted(username);
+        Boolean isExisted = userServiceImpl.UsernameIsExisted(username);
 
-        assertTrue(result);
-
+        assertNotNull(isExisted);
+        assertTrue(isExisted);
     }
 
-    //Test username đúng regex và không có trong db
     @Test
-    void test11_UsernameIsExisted_test3() {
+    void USER_023_emailIsExisted_test01() {
+        String email = "";
 
-        String username = "jmaksldjkalsd";
-
-        Boolean result = userServiceImpl.UsernameIsExisted(username);
-
-        assertFalse(result);
-    }
-
-    //Email có định dạng là ít nhất 1 ký tự mở đầu rồi có @ và có ít nhất 1 ký tự đằng sau
-    //Test email sai regex
-    @Test
-    void test12_EmailIsExisted_test1() {
-
-        String email = "a";
-
-        assertThrows(
-                MyBadRequestException.class,
+        Exception exception = assertThrows(MyBadRequestException.class,
                 () -> userServiceImpl.EmailIsExisted(email)
         );
 
+        String expectedMessage = "Email is invalid";
+        assertEquals(expectedMessage, exception.getMessage());
     }
 
-    //Test email đúng regex và có trong db
     @Test
-    void test13_EmailIsExisted_test2() {
+    void USER_024_emailIsExisted_test02() {
+        String email = "a@";
 
-        String email = "vA@gmail.com";
-
-        Boolean result = userServiceImpl.EmailIsExisted(email);
-
-        assertTrue(result);
-
-    }
-
-    //Test email đúng regex và không có trong db
-    @Test
-    void test14_EmailIsExisted_test3() {
-
-        String email = "a@gmil.com";
-
-        Boolean result = userServiceImpl.EmailIsExisted(email);
-
-        assertFalse(result);
-    }
-
-    //Password ít nhất dài 8 ký tự, có 1 ký tự hoa và thường, ít nhất 1 số và 1 ký tự đặc biệt
-    //Test password rỗng
-    @Test
-    void test15_PasswordIsGood_test1() {
-
-        String password = "";
-
-        assertThrows(
-                MyBadRequestException.class,
-                () -> userServiceImpl.PasswordIsGood(password)
+        Exception exception = assertThrows(MyBadRequestException.class,
+                () -> userServiceImpl.EmailIsExisted(email)
         );
 
+        String expectedMessage = "Email is invalid";
+        assertEquals(expectedMessage, exception.getMessage());
     }
 
-    //Test password sai regex
     @Test
-    void test16_PasswordIsGood_test2() {
-
-        String password = "1";
-
-        assertThrows(
-                MyBadRequestException.class,
-                () -> userServiceImpl.PasswordIsGood(password)
-        );
-
-    }
-
-    //Test password đúng regex
-    @Test
-    void test17_PasswordIsGood_test3() {
-
-        String password = "oit#FI7%m6NYt5l";
-
-        Boolean result = userServiceImpl.PasswordIsGood(password);
-
-        assertTrue(result);
-    }
-
-    //Test getRawUserByUsername khi username không có trong db
-    @Test
-    void test18_getRawUserByUsername_test1() {
-
-        String username = "user_3";
-
-        UsernameNotFoundException exception = assertThrows(
-                UsernameNotFoundException.class,
-                () -> userServiceImpl.getRawUserByUsername(username)
-        );
-
-        assertNotNull(exception);
-
-    }
-
-    //Test getRawUserByUsername khi username có trong db
-    @Test
-    void test19_getRawUserByUsername_test2() {
-
-        String username = "user_1";
-
-        Account user = userServiceImpl.getRawUserByUsername(username);
-        Account expectedUser = userRepository.getByUsername(username).get();
-
-        assertNotNull(user);
-        assertEquals(expectedUser, user);
-
-    }
-
-    //Test getUserByName khi name rỗng
-    @Test
-    void test20_getUserByName_test1() {
-
-        String name = "";
-
-        UsernameNotFoundException exception = assertThrows(
-                UsernameNotFoundException.class,
-                () -> userServiceImpl.getUserByName(name)
-        );
-
-        assertNotNull(exception);
-
-    }
-
-    //Test getUserByName khi name không có trong db
-    @Test
-    void test21_getUserByName_test2() {
-
-        String name = "abc";
-
-        UsernameNotFoundException exception = assertThrows(
-                UsernameNotFoundException.class,
-                () -> userServiceImpl.getUserByName(name)
-        );
-
-        assertNotNull(exception);
-
-    }
-
-    //Test getUserByName khi name có trong db
-    //Hàm này đặt tên hàm sai với mục đích của hàm
-    @Test
-    void test22_getUserByName_test3() {
-
-        String name = "user_1";
-
-        AccountSummaryResponse user = userServiceImpl.getUserByName(name);
-
-        assertNotNull(user);
-        assertEquals(name, user.getUsername());
-
-    }
-
-    //Test getUserByEmail khi email rỗng
-    @Test
-    void test23_getUserByEmail_test1() {
-
-        String email = "";
-
-        UsernameNotFoundException exception = assertThrows(
-                UsernameNotFoundException.class,
-                () -> userServiceImpl.getUserByEmail(email)
-        );
-
-        assertNotNull(exception);
-
-    }
-
-    //Test getUserByEmail khi email không có trong db
-    @Test
-    void test24_getUserByEmail_test2() {
-
+    void USER_025_emailIsExisted_test03() {
         String email = "minh@gmail.com";
 
-        UsernameNotFoundException exception = assertThrows(
-                UsernameNotFoundException.class,
+        Boolean isExisted = userServiceImpl.EmailIsExisted(email);
+        assertNotNull(isExisted);
+        assertFalse(isExisted);
+    }
+
+    @Test
+    void USER_026_emailIsExisted_test04() {
+        String email = "vA@gmail.com";
+
+        Boolean isExisted = userServiceImpl.EmailIsExisted(email);
+        assertNotNull(isExisted);
+        assertTrue(isExisted);
+    }
+
+    @Test
+    void USER_027_passwordIsGood_test01() {
+        String password = "";
+
+        Exception exception = assertThrows(MyBadRequestException.class,
+                () -> userServiceImpl.PasswordIsGood(password)
+        );
+
+        String expectedMessage = "Password must not be empty";
+        assertEquals(expectedMessage, exception.getMessage());
+    }
+
+    @Test
+    void USER_028_passwordIsGood_test02() {
+        String password = "1";
+
+        Exception exception = assertThrows(MyBadRequestException.class,
+                () -> userServiceImpl.PasswordIsGood(password)
+        );
+
+        String expectedMessage = "Password is invalid. Password must have:\n + At least 8 characters long\n + Contains at least one uppercase letter\n + Contains at least one lowercase letter\n + Contains at least one digit\n + Contains at least one special character\n";
+        assertEquals(expectedMessage, exception.getMessage());
+    }
+
+    @Test
+    void USER_029_passwordIsGood_test03() {
+        String password = "123456789";
+
+        Boolean isGood = userServiceImpl.PasswordIsGood(password);
+
+        assertNotNull(isGood);
+        assertFalse(isGood);
+
+    }
+
+    @Test
+    void USER_030_passwordIsGood_test04() {
+        String password = "oit#FI7%m6NYt5l";
+
+        Boolean isGood = userServiceImpl.PasswordIsGood(password);
+
+        assertNotNull(isGood);
+        assertTrue(isGood);
+    }
+
+    @Test
+    void USER_031_getUserByName_test01() {
+        String username = "";
+
+        Exception exception = assertThrows(MyBadRequestException.class,
+                () -> userServiceImpl.getUserByName(username)
+        );
+
+        String expectedMessage = "Username must not be empty";
+        assertEquals(expectedMessage, exception.getMessage());
+    }
+
+    @Test
+    void USER_032_getUserByName_test02() {
+        String username = "abc!";
+
+        Exception exception = assertThrows(MyBadRequestException.class,
+                () -> userServiceImpl.getUserByName(username)
+        );
+
+        String expectedMessage = "Username is invalid. Username must be at least 5 characters long; Password can have lowercase, uppercase, numbers, character . or _";
+        assertEquals(expectedMessage, exception.getMessage());
+    }
+
+    @Test
+    void USER_033_getUserByName_test03() {
+        String name = "I Am User 1";
+        String user_id = "fa19dcbd-241797c7-bA83f36c5";
+
+        AccountSummaryResponse account = userServiceImpl.getUserByName(name);
+
+        assertNotNull(account);
+        assertEquals(user_id, account.getId());
+        assertEquals(name, account.getUsername());
+    }
+
+    @Test
+    void USER_034_getUserByEmail_test01() {
+        String email = "";
+
+        Exception exception = assertThrows(MyBadRequestException.class,
                 () -> userServiceImpl.getUserByEmail(email)
         );
 
-        assertNotNull(exception);
-
+        String expectedMessage = "Email must not empty";
+        assertEquals(expectedMessage, exception.getMessage());
     }
 
-    //Test getUserByEmail khi email có trong db
     @Test
-    void test25_getUserByEmail_test3() {
+    void USER_035_getUserByEmail_test02() {
+        String email = "a@";
 
-        String email = "nguyenductan04202@gmail.com";
+        Exception exception = assertThrows(MyBadRequestException.class,
+                () -> userServiceImpl.getUserByEmail(email)
+        );
 
-        AccountSummaryResponse user = userServiceImpl.getUserByEmail(email);
-
-        assertNotNull(user);
-        assertEquals(email, user.getEmail());
-
+        String expectedMessage = "Email is invalid";
+        assertEquals(expectedMessage, exception.getMessage());
     }
 
-    //Test searchByName khi string rỗng
     @Test
-    void test26_searchByName_test1() {
+    void USER_036_getUserByEmail_test03() {
+        String email = "minh@gmail.com";
 
-        String search = "";
+        Exception exception = assertThrows(MyNotFoundException.class,
+                () -> userServiceImpl.getUserByEmail(email)
+        );
 
-        List<AccountSummaryResponse> userList = userServiceImpl.searchByName(search);
-
-        assertNotNull(userList);
-        assertTrue(userList.isEmpty());
-
+        String expectedMessage = "User not found";
+        assertEquals(expectedMessage, exception.getMessage());
     }
 
-    //Test searchByName khi tìm thấy người dùng
-    //Hàm tìm kiếm theo tên người dùng này không check xem tên người dùng có chứa từ khóa hay không ví dụ search I Am ra các tên có chứa từ I Am trong đó
     @Test
-    void test27_searchByName_test2() {
+    void USER_037_getUserByEmail_test04() {
+        String email = "vA@gmail.com";
+        String user_id = "562db9be-1e0c9cc6-66569a1b";
 
-        String search = "I Am Super Admin";
-
-        List<AccountSummaryResponse> userList = userServiceImpl.searchByName(search);
-
-        assertNotNull(userList);
-        assertFalse(userList.isEmpty());
-        assertEquals(1, userList.size());
-
+        AccountSummaryResponse account = userServiceImpl.getUserByEmail(email);
+        assertNotNull(account);
+        assertEquals(email, account.getEmail());
+        assertEquals(user_id, account.getId());
     }
 
-    //Test searchByName khi không tìm thấy người dùng
     @Test
-    void test28_searchByName_test3() {
-
-        String search = "I Am";
-
-        List<AccountSummaryResponse> userList = userServiceImpl.searchByName(search);
-
-        assertNotNull(userList);
-        assertTrue(userList.isEmpty());
-
-    }
-
-    //Test delete user
-    @Test
-    void test29_deteleUserByUsername_test1() {
-
-        String search = "user_1";
-
-        userServiceImpl.deteleUserByUsername(search);
-        Account deletedUser = userRepository.getByUsername(search).orElse(null);
-
-        assertNull(deletedUser);
-
-    }
-
-    //Test getRoleFromUser khi username rỗng
-    @Test
-    void test30_getRoleFromUser_test1() {
-
+    void USER_038_searchByName_test01() {
         String username = "";
 
-        assertThrows(
-                UsernameNotFoundException.class,
+        List<AccountSummaryResponse> accounts = userServiceImpl.searchByName(username);
+        assertNotNull(accounts);
+        assertTrue(accounts.isEmpty());
+    }
+
+    @Test
+    void USER_039_searchByName_test02() {
+        String username = "I Am";
+
+        List<AccountSummaryResponse> accounts = userServiceImpl.searchByName(username);
+        assertNotNull(accounts);
+        assertFalse(accounts.isEmpty());
+        assertEquals(4, accounts.size());
+    }
+
+    @Test
+    void USER_040_searchByName_test03() {
+        String username = "Super Admin";
+
+        List<AccountSummaryResponse> accounts = userServiceImpl.searchByName(username);
+        assertNotNull(accounts);
+        assertFalse(accounts.isEmpty());
+        assertEquals(1, accounts.size());
+    }
+
+    @Test
+    void USER_041_deleteUserByUsername_test01() {
+        String username = "";
+
+        Exception exception = assertThrows(MyBadRequestException.class,
+                () -> userServiceImpl.deteleUserByUsername(username)
+        );
+
+        String expectedMessage = "Username must not be empty";
+        assertEquals(expectedMessage, exception.getMessage());
+    }
+
+    @Test
+    void USER_042_deleteUserByUsername_test02() {
+        String username = "user_3";
+
+        Exception exception = assertThrows(MyNotFoundException.class,
+                () -> userServiceImpl.deteleUserByUsername(username)
+        );
+
+        String expectedMessage = "User not found";
+        assertEquals(expectedMessage, exception.getMessage());
+    }
+
+    @Test
+    void USER_043_deleteUserByUsername_test03() {
+        String username = "user_1";
+        String user_id = "fa19dcbd-241797c7-bA83f36c5";
+
+        userServiceImpl.deteleUserByUsername(username);
+        Account account = userRepository.findById(user_id).orElse(null);
+
+        assertNull(account);
+    }
+
+    @Test
+    void USER_044_getRoleFromUser_test01() {
+        String username = "";
+
+        Exception exception = assertThrows(MyBadRequestException.class,
                 () -> userServiceImpl.getRoleFromUser(username)
         );
 
+        String expectedMessage = "Username must not be empty";
+        assertEquals(expectedMessage, exception.getMessage());
     }
 
-    //Test getRoleFromUser khi username không có trong db
     @Test
-    void test31_getRoleFromUser_test2() {
+    void USER_045_getRoleFromUser_test02() {
+        String username = "user_3";
 
-        String username = "ajmksdmjaklsd";
-
-        assertThrows(
-                UsernameNotFoundException.class,
+        Exception exception = assertThrows(MyNotFoundException.class,
                 () -> userServiceImpl.getRoleFromUser(username)
         );
 
+        String expectedMessage = "User not found";
+        assertEquals(expectedMessage, exception.getMessage());
     }
 
-    //Test getRoleFromUser khi username có trong db
     @Test
-    void test32_getRoleFromUser_test3() {
-
-        String username = "super_admin.1234";
-
-        Collection<Role> userRole = userServiceImpl.getRoleFromUser(username);
-
-        assertNotNull(userRole);
-        assertFalse(userRole.isEmpty());
-        assertEquals(3, userRole.size());
-
-    }
-
-    //Test userHaveRole với người dùng không có role admin hoặc super admin
-    @Test
-    void test33_userHaveRole_test1() {
-
+    void USER_046_getRoleFromUser_test03() {
         String username = "user_1";
+        String user_id = "fa19dcbd-241797c7-bA83f36c5";
 
-        Boolean haveRoleAdminTest = userServiceImpl.userHaveRole(username, ERole.ROLE_ADMIN);
-        Boolean haveRoleSuperAdminTest = userServiceImpl.userHaveRole(username, ERole.ROLE_SUPER_ADMIN);
-
-        assertFalse(haveRoleAdminTest);
-        assertFalse(haveRoleSuperAdminTest);
-
-    }
-
-    //Test userHaveRole với người dùng không có role nào
-    @Test
-    void test34_userHaveRole_test2() {
-
-        String username = "testUser";
-        Account mockAccount = mock(Account.class);
-
-        when(userRepositoryMock.getByUsername(username)).thenReturn(Optional.of(mockAccount));
-
-        Boolean haveNoRoleTest1 = userServiceImplMock.userHaveRole(username, ERole.ROLE_USER);
-        Boolean haveNoRoleTest2 = userServiceImplMock.userHaveRole(username, ERole.ROLE_ADMIN);
-        Boolean haveNoRoleTest3 = userServiceImplMock.userHaveRole(username, ERole.ROLE_SUPER_ADMIN);
-
-        assertFalse(haveNoRoleTest1);
-        assertFalse(haveNoRoleTest2);
-        assertFalse(haveNoRoleTest3);
-        verify(userRepositoryMock, atLeastOnce()).getByUsername(username);
+        Collection<Role> roles = userServiceImpl.getRoleFromUser(username);
+        assertNotNull(roles);
+        assertFalse(roles.isEmpty());
+        assertEquals(1, roles.size());
 
     }
 
-    //Test userHaveRole với người dùng có role 
     @Test
-    void test35_userHaveRole_test3() {
+    void USER_047_userHaveRole_test01() {
+        String username = "";
 
+        Exception exception = assertThrows(MyBadRequestException.class,
+                () -> userServiceImpl.userHaveRole(username, ERole.ROLE_USER)
+        );
+
+        String expectedMessage = "Username must not be empty";
+        assertEquals(expectedMessage, exception.getMessage());
+    }
+
+    @Test
+    void USER_048_userHaveRole_test02() {
+        String username = "user_3";
+
+        Exception exception = assertThrows(MyNotFoundException.class,
+                () -> userServiceImpl.userHaveRole(username, ERole.ROLE_USER)
+        );
+
+        String expectedMessage = "User not found";
+        assertEquals(expectedMessage, exception.getMessage());
+    }
+
+    @Test
+    void USER_049_userHaveRole_test03() {
         String username = "user_1";
+        ERole role = ERole.ROLE_USER;
 
-        Boolean haveRoleUserTest = userServiceImpl.userHaveRole(username, ERole.ROLE_USER);
+        Boolean isHaveRole = userServiceImpl.userHaveRole(username, role);
+        assertNotNull(isHaveRole);
+        assertTrue(isHaveRole);
+    }
 
-        assertTrue(haveRoleUserTest);
+    @Test
+    void USER_050_userHaveRole_test04() {
+        String username = "user_1";
+        ERole role = ERole.ROLE_SUPER_ADMIN;
+
+        Boolean isHaveRole = userServiceImpl.userHaveRole(username, role);
+        assertNotNull(isHaveRole);
+        assertFalse(isHaveRole);
+    }
+
+    @Test
+    void USER_051_userHaveRole_test05() {
+        String username = "user_1";
+        String user_id = "fa19dcbd-241797c7-b83f36c5";
+
+        Account user = userRepository.findById(user_id).get();
+        user.setRoles(new ArrayList<>());
+        userServiceImpl.saveUser(user);
+
+        ERole user_role = ERole.ROLE_USER;
+        ERole admin_role = ERole.ROLE_ADMIN;
+        ERole super_admin_role = ERole.ROLE_SUPER_ADMIN;
+
+        Boolean isHaveUserRole = userServiceImpl.userHaveRole(username, user_role);
+        Boolean isHaveAdminRole = userServiceImpl.userHaveRole(username, admin_role);
+        Boolean isHaveSuperAdminRole = userServiceImpl.userHaveRole(username, super_admin_role);
+
+        assertNotNull(isHaveUserRole);
+        assertNotNull(isHaveAdminRole);
+        assertNotNull(isHaveSuperAdminRole);
+        assertFalse(isHaveUserRole);
+        assertFalse(isHaveAdminRole);
+        assertFalse(isHaveSuperAdminRole);
 
     }
 
-    //Test userHaveRole với account có role
     @Test
-    void test36_userHaveRole_test4() {
+    void USER_052_removeRoleUser_test01() {
+        String username = "";
 
-        Account user = mock(Account.class);
-        Collection<Role> roles = new ArrayList<>();
-        roles.add(new Role(ERole.ROLE_USER));
-        roles.add(new Role(ERole.ROLE_ADMIN));
-        roles.add(new Role(ERole.ROLE_SUPER_ADMIN));
+        Exception exception = assertThrows(MyBadRequestException.class,
+                () -> userServiceImpl.removeRoleUser(username, ERole.ROLE_USER)
+        );
 
-        when(user.getRoles()).thenReturn(roles);
-
-        Boolean userHaveUserRoleTest = userServiceImplMock.userHaveRole(user, ERole.ROLE_USER);
-        Boolean userHaveAdminRoleTest = userServiceImplMock.userHaveRole(user, ERole.ROLE_ADMIN);
-        Boolean userHaveSuperAdminRoleTest = userServiceImplMock.userHaveRole(user, ERole.ROLE_SUPER_ADMIN);
-
-        assertTrue(userHaveUserRoleTest);
-        assertTrue(userHaveAdminRoleTest);
-        assertTrue(userHaveSuperAdminRoleTest);
-
+        String expectedMessage = "Username must not be empty";
+        assertEquals(expectedMessage, exception.getMessage());
     }
 
-    //Test userHaveRole với account không có role
     @Test
-    void test37_userHaveRole_test5() {
+    void USER_053_removeRoleUser_test02() {
+        String username = "user_3";
 
-        Account user = mock(Account.class);
-        Collection<Role> roles = new ArrayList<>();
+        Exception exception = assertThrows(MyNotFoundException.class,
+                () -> userServiceImpl.removeRoleUser(username, ERole.ROLE_USER)
+        );
 
-        when(user.getRoles()).thenReturn(roles);
-
-        Boolean userHaveUserRoleTest = userServiceImplMock.userHaveRole(user, ERole.ROLE_USER);
-        Boolean userHaveAdminRoleTest = userServiceImplMock.userHaveRole(user, ERole.ROLE_ADMIN);
-        Boolean userHaveSuperAdminRoleTest = userServiceImplMock.userHaveRole(user, ERole.ROLE_SUPER_ADMIN);
-
-        assertFalse(userHaveUserRoleTest);
-        assertFalse(userHaveAdminRoleTest);
-        assertFalse(userHaveSuperAdminRoleTest);
-
+        String expectedMessage = "User not found";
+        assertEquals(expectedMessage, exception.getMessage());
     }
 
-    //Test removeRoleUser mặc định là username truyền vào tìm kiếm không bị throws exception
     @Test
-    void test38_removeRoleUser_test1() {
-
+    void USER_054_removeRoleUser_test03() {
         String username = "super_admin.1234";
+        ERole role = ERole.ROLE_USER;
 
-        userServiceImpl.removeRoleUser(username, ERole.ROLE_USER);
-        Account user = userRepository.getByUsername(username).get();
+        userServiceImpl.removeRoleUser(username, role);
+        Account savedAccount = userRepository.getByUsername(username).get();
 
-        assertFalse(user.getRoles().isEmpty());
-        assertEquals(2, user.getRoles().size());
-
+        assertNotNull(savedAccount);
+        assertEquals(2, savedAccount.getRoles().size());
     }
 
+    @Test
+    void USER_055_removeRoleUser_test04() {
+        String username = "user_1";
+        ERole role = ERole.ROLE_ADMIN;
+
+        userServiceImpl.removeRoleUser(username, role);
+        Account savedAccount = userRepository.findById("fa19dcbd-241797c7-b83f36c5").get();
+
+        assertNotNull(savedAccount);
+        assertEquals(1, savedAccount.getRoles().size());
+    }
 }
